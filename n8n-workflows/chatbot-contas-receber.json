@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message') {\n  return [];\n}\nif (payload.fromMe === true) {\n  return [];\n}\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) {\n  return [];\n}\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim());\nif (!messageText) {\n  return [];\n}\nconst phone = chatId.replace(/@c\\.us$/i, '').replace(/@lid$/i, '');\nreturn [\n  {\n    json: {\n      session: envelope.session || $json.session || 'default',\n      event,\n      phone,\n      chatId,\n      text: String(messageText).trim(),\n      rawPayload: payload,\n      rawEnvelope: envelope\n    }\n  }\n];"
+        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message') {\n  return [];\n}\nif (payload.fromMe === true) {\n  return [];\n}\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) {\n  return [];\n}\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim());\nif (!messageText) {\n  return [];\n}\nconst senderId = String(\n  payload.remoteJidAlt ||\n  payload._data?.remoteJidAlt ||\n  payload._data?.id?.remoteJidAlt ||\n  payload.author ||\n  payload.participant ||\n  payload.key?.participant ||\n  chatId\n).trim();\nconst phone = senderId\n  .replace(/@s\\.whatsapp\\.net$/i, '')\n  .replace(/@c\\.us$/i, '')\n  .replace(/@lid$/i, '');\nreturn [\n  {\n    json: {\n      session: envelope.session || $json.session || 'default',\n      event,\n      phone,\n      chatId,\n      senderId,\n      text: String(messageText).trim(),\n      rawPayload: payload,\n      rawEnvelope: envelope\n    }\n  }\n];"
       },
       "id": "b1282d33-ee0e-4f34-bf6b-b115837b7002",
       "name": "Normalize Incoming Message",
@@ -178,7 +178,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const digits = ($json.text || '').replace(/\\D/g, '');\nconst match = digits.match(/(\\d{11}|\\d{14})/);\nreturn [\n  {\n    json: {\n      ...$json,\n      document: match ? match[1] : ''\n    }\n  }\n];"
+        "jsCode": "const digits = ($json.text || '').replace(/\\D/g, '');\nconst match = digits.match(/(\\d{14}|\\d{11})/);\nreturn [\n  {\n    json: {\n      ...$json,\n      document: match ? match[1] : ''\n    }\n  }\n];"
       },
       "id": "1cc4a8f2-57af-4875-8d35-d20289a3b006",
       "name": "Detect Document",
@@ -236,13 +236,25 @@
     {
       "parameters": {
         "conditions": {
-          "string": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "value1": "={{$json.intent}}",
-              "operation": "equal",
-              "value2": "ask_document"
+              "id": "57c3bbf1-8a9e-4a14-9ae8-5476396a0a11",
+              "leftValue": "={{$json.intent}}",
+              "rightValue": "ask_document",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "2a03d618-b33b-49bd-9b4d-064c0ca2e009",
@@ -288,13 +300,25 @@
     {
       "parameters": {
         "conditions": {
-          "string": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "value1": "={{$json.intent}}",
-              "operation": "equal",
-              "value2": "segunda_via_boleto"
+              "id": "0845d28a-7735-4fd2-8b90-35672510be22",
+              "leftValue": "={{$json.intent}}",
+              "rightValue": "segunda_via_boleto",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "4f5146bf-0f7a-44a5-98cf-77c6db9cf011",
@@ -335,7 +359,7 @@
             },
             {
               "name": "Telefone",
-              "value": "={{$json.phone}}"
+                "value": "={{String($json.rawPayload?._data?.key?.remoteJidAlt || $json.phone || '').replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, '')}}"
             }
           ]
         },
@@ -353,12 +377,25 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "value1": "={{$json.CprfValido && $json.TelefoneValido}}",
-              "operation": "isTrue"
+              "id": "4c9a5ea5-c5f1-4886-969b-0f8aa843dc33",
+              "leftValue": "={{$json.CprfValido && $json.TelefoneValido}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "4aa68638-ae57-4f63-a196-c1cb948cc014",
@@ -426,12 +463,25 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "value1": "={{$json.canUpdate}}",
-              "operation": "isTrue"
+              "id": "f7b250c7-6053-4f9f-b2e0-b29c36ecfa44",
+              "leftValue": "={{$json.canUpdate}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "ac570493-ef92-4fbb-a4d1-456dc79da018",
@@ -462,7 +512,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ RequestedDocument: $json.document, RequestedPhone: $json.phone, CurrentDueDate: $json.currentDueDate, NewDueDate: $json.newDueDate, Reason: 'Perda ou esquecimento de boleto', Channel: 'whatsapp', RequestedBy: 'cliente' }) }}",
+        "jsonBody": "={{ JSON.stringify({ RequestedDocument: $json.document, RequestedPhone: String($node[\"Normalize Incoming Message\"].json.rawPayload.remoteJidAlt || $node[\"Normalize Incoming Message\"].json.rawPayload._data?.remoteJidAlt || $node[\"Normalize Incoming Message\"].json.rawPayload._data?.key?.remoteJidAlt || $node[\"Normalize Incoming Message\"].json.phone || '').replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, ''), CurrentDueDate: $json.currentDueDate, NewDueDate: $json.newDueDate, Reason: 'Perda ou esquecimento de boleto', Channel: 'whatsapp', RequestedBy: 'cliente' }) }}",
         "options": {}
       },
       "id": "0a7a52c6-f796-4d56-a6df-307d7348a019",
