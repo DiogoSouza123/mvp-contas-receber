@@ -1,0 +1,394 @@
+{
+  "name": "MVP - Cobranca Diaria WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "0c7d88ae-7ec9-4e86-a4f5-3eb88c431001",
+      "name": "Cron 08h",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/MvpConfig",
+        "options": {}
+      },
+      "id": "fb2b9d0a-2d57-4955-bc89-4edc64459002",
+      "name": "Get MVP Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\nconst finalDate = new Date(today);\nfinalDate.setDate(finalDate.getDate() - 5);\nconst initialDate = new Date(today);\ninitialDate.setDate(initialDate.getDate() - 90);\nconst format = (value) => value.toISOString().slice(0, 10);\nreturn [\n  {\n    json: {\n      key: 'demo',\n      tenantId: 1,\n      dataInicial: format(initialDate),\n      dataFinal: format(finalDate),\n      initialMessage: $json.InitialWhatsAppMessage,\n      fallbackMessage: $json.DefaultFallbackMessage\n    }\n  }\n];"
+      },
+      "id": "6bd43fcb-36ee-44c2-8a86-90d7f28ff003",
+      "name": "Build Date Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetContasReceberByVencimento",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Key",
+              "value": "={{$json.key}}"
+            },
+            {
+              "name": "DataInicial",
+              "value": "={{$json.dataInicial}}"
+            },
+            {
+              "name": "DataFinal",
+              "value": "={{$json.dataFinal}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8d88f593-fa45-4df6-9a97-f6aef2e83004",
+      "name": "Get Overdue Accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const settings = $item(0).$node[\"Build Date Window\"].json;\nconst accounts = $json.Dados || [];\nreturn accounts.map((entry) => ({\n  json: {\n    key: settings.key,\n    tenantId: settings.tenantId,\n    initialMessage: settings.initialMessage,\n    contaId: entry.Conta.Id,\n    clienteId: entry.Pagador.Id,\n    clienteNome: entry.Pagador.Nome,\n    cprf: entry.Pagador.Cnpj || entry.Pagador.Cpf,\n    vencimento: entry.Conta.DataVencimento,\n    total: entry.Conta.Total,\n    historico: entry.Conta.Historico,\n    documento: entry.Conta.Documento\n  }\n}));"
+      },
+      "id": "f1dcb06f-e8cb-4ac2-92dd-57cb27c47005",
+      "name": "Expand Overdue Accounts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetContatoCliente",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Key",
+              "value": "={{$json.key}}"
+            },
+            {
+              "name": "ClienteId",
+              "value": "={{$json.clienteId}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2cdfefb4-c47a-4b2a-991d-1d58dd1fe006",
+      "name": "Get Client Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetBoletoByCprf",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Cprf",
+              "value": "={{$node[\"Expand Overdue Accounts\"].json.cprf}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "={{$node[\"Expand Overdue Accounts\"].json.tenantId}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22b44377-4361-4c60-b3f5-51b54bcae007",
+      "name": "Get Boleto By Cprf",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const account = $item(0).$node[\"Expand Overdue Accounts\"].json;\nconst contactsResponse = $item(0).$node[\"Get Client Contacts\"].json;\nconst contacts = contactsResponse.Contatos || [];\nconst defaultContact = contacts[0];\nconst phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\nif (!phone) {\n  return [];\n}\nconst boletos = $json.Boletos || [];\nconst boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\nif (!boleto) {\n  return [];\n}\nconst amount = Number(account.total || 0).toFixed(2).replace('.', ',');\nconst chatId = phone.includes('@') ? phone : `${phone}@c.us`;\nconst text = `${account.initialMessage}\\nCliente: ${account.clienteNome}\\nDocumento: ${account.documento}\\nVencimento: ${account.vencimento}\\nValor: R$ ${amount}\\nLinha digitavel: ${boleto.LinhaDigitavel}`;\nreturn [\n  {\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text\n    }\n  }\n];"
+      },
+      "id": "b34c31a0-1fd4-4eff-b8fd-bd45f6db5008",
+      "name": "Prepare WhatsApp Charge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/CheckWhatsAppPolicy",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.text, PolicyType: 'campaign' }) }}",
+        "options": {}
+      },
+      "id": "4ec94f94-cdc2-4431-922e-a80e3d391008",
+      "name": "Check Send Policy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.Allowed}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "bc1b48b1-1a69-41bd-820d-e2ea15924009",
+      "name": "If Policy Allows",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://waha:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{$env.WAHA_API_KEY || 'changeme'}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: 'default', chatId: $node[\"Prepare WhatsApp Charge\"].json.chatId, text: $node[\"Prepare WhatsApp Charge\"].json.text }) }}",
+        "options": {}
+      },
+      "id": "5e4e8ab8-375d-42c6-9542-e43b5b4da009",
+      "name": "Send WhatsApp Charge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2580,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/UpdateWhatsAppBoletoMessage",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "BoletoId",
+              "value": "={{$node[\"Prepare WhatsApp Charge\"].json.boletoId}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "={{$node[\"Prepare WhatsApp Charge\"].json.tenantId}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Prepare WhatsApp Charge\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $node[\"Check Send Policy\"].json.ReasonCode } }) }}",
+        "options": {}
+      },
+      "id": "8a365ef5-97b8-4c8d-8b82-81d23849f010",
+      "name": "Register WhatsApp Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2820,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Cron 08h": {
+      "main": [
+        [
+          {
+            "node": "Get MVP Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get MVP Config": {
+      "main": [
+        [
+          {
+            "node": "Build Date Window",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Date Window": {
+      "main": [
+        [
+          {
+            "node": "Get Overdue Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Overdue Accounts": {
+      "main": [
+        [
+          {
+            "node": "Expand Overdue Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Overdue Accounts": {
+      "main": [
+        [
+          {
+            "node": "Get Client Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Contacts": {
+      "main": [
+        [
+          {
+            "node": "Get Boleto By Cprf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Boleto By Cprf": {
+      "main": [
+        [
+          {
+            "node": "Prepare WhatsApp Charge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare WhatsApp Charge": {
+      "main": [
+        [
+          {
+            "node": "Check Send Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Send Policy": {
+      "main": [
+        [
+          {
+            "node": "If Policy Allows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Policy Allows": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Charge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Send WhatsApp Charge": {
+      "main": [
+        [
+          {
+            "node": "Register WhatsApp Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "91af5c72-0df1-4fdb-a921-4b143bb7e101",
+  "meta": {},
+  "pinData": {},
+  "tags": []
+}

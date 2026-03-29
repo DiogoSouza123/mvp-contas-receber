@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mvp-postgres
+    environment:
+      POSTGRES_DB: mvp_recebiveis
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+      - ./postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+    container_name: mvp-api
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mvp_recebiveis
+      DEFAULT_DELAY_DAYS: 3
+      DAILY_RUN_TIME: 08:00
+      DEFAULT_FALLBACK_MESSAGE: Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.
+    ports:
+      - "3000:3000"
+
+  n8n:
+    image: n8nio/n8n:1.84.1
+    container_name: mvp-n8n
+    depends_on:
+      - postgres
+      - api
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: mvp_recebiveis
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: postgres
+      N8N_RUNNERS_ENABLED: "true"
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY:-}
+      PERPLEXITY_MODEL: ${PERPLEXITY_MODEL:-sonar}
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: mvp-waha
+    environment:
+      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
+      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:-a7c9d3f1wahaAdmin2026}
+      WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME:-admin}
+      WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD:-a7c9d3f1wahaAdmin2026}
+      WHATSAPP_DEFAULT_ENGINE: NOWEB
+    ports:
+      - "3001:3000"

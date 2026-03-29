@@ -1,0 +1,908 @@
+{
+  "name": "MVP - Chatbot Contas a Receber",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waha-contas-receber",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "bc8eb9b1-5e39-4d78-b7aa-c76346d49001",
+      "name": "WAHA Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        420
+      ],
+      "webhookId": "waha-contas-receber"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message') {\n  return [];\n}\nif (payload.fromMe === true) {\n  return [];\n}\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) {\n  return [];\n}\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim());\nif (!messageText) {\n  return [];\n}\nconst phone = chatId.replace(/@c\\.us$/i, '').replace(/@lid$/i, '');\nreturn [\n  {\n    json: {\n      session: envelope.session || $json.session || 'default',\n      event,\n      phone,\n      chatId,\n      text: String(messageText).trim(),\n      rawPayload: payload,\n      rawEnvelope: envelope\n    }\n  }\n];"
+      },
+      "id": "b1282d33-ee0e-4f34-bf6b-b115837b7002",
+      "name": "Normalize Incoming Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Role: 'user', Message: $json.text, Channel: 'whatsapp', Metadata: { event: $json.event, chatId: $json.chatId } }) }}",
+        "options": {}
+      },
+      "id": "c7276b6b-756d-4114-9a07-4c0fd2f39003",
+      "name": "Log Inbound Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/MvpConfig",
+        "options": {}
+      },
+      "id": "7ae4ca5a-b0ae-4d45-83b6-0cb3d3f78004",
+      "name": "Get MVP Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetConversationState",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Telefone",
+              "value": "={{$node[\"Normalize Incoming Message\"].json.phone}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5bc8d001-6f4d-454d-95c6-f04a8f6a3004",
+      "name": "Get Conversation State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $item(0).$node[\"Normalize Incoming Message\"].json;\nconst config = $item(0).$node[\"Get MVP Config\"].json;\nconst state = $json || {};\nreturn [\n  {\n    json: {\n      ...incoming,\n      fallbackMessage: config.DefaultFallbackMessage,\n      defaultDelayDays: Number(config.DefaultDelayDays || 3),\n      initialMessage: config.InitialWhatsAppMessage,\n      conversationState: state.CurrentState || 'idle',\n      conversationFlow: state.ActiveFlow || '',\n      conversationLastIntent: state.LastIntent || '',\n      conversationContext: state.Context || {},\n      conversationStateFound: Boolean(state.Found),\n      conversationStateExpiresAt: state.ExpiresAt || null,\n      conversationStateTtlHours: Number(config.ConversationStateTtlHours || 12)\n    }\n  }\n];"
+      },
+      "id": "f0ea8ff5-17a6-4f84-a682-d81f0bf15005",
+      "name": "Merge Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized = ($json.text || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst exactCommands = new Set(['parar', 'stop', 'descadastrar', 'cancelar cobranca', 'remover meu numero', 'nao enviar', 'nao mande']);\nconst isOptOutCommand = exactCommands.has(normalized);\nreturn [{ json: { ...$json, isOptOutCommand } }];"
+      },
+      "id": "4e5c0f5a-378f-4d66-aa3f-5a770f2ea006",
+      "name": "Detect Opt Out Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "8f7de7ef-b496-46ca-9800-a27d7c88b3ac",
+              "leftValue": "={{$json.isOptOutCommand}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "fb28e113-8824-4cc9-8de8-7cecc68f7007",
+      "name": "If Opt Out Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetWhatsAppOptOut",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, OptOut: true, Reason: 'Cliente solicitou bloqueio de cobrancas automaticas no WhatsApp', Source: 'chatbot', SourceMessage: $json.text }) }}",
+        "options": {}
+      },
+      "id": "83ea4c3f-7fdf-4bdd-99cc-92aa347c7008",
+      "name": "Set WhatsApp Opt Out",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1900,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Detect Opt Out Command\"].json;\nreturn [\n  {\n    json: {\n      ...context,\n      optOutResult: $json,\n      replyText: 'Entendido. Nao enviaremos novas cobrancas automaticas por este WhatsApp. Se quiser retomar no futuro, fale com um operador.',\n      logIntent: 'opt_out'\n    }\n  }\n];"
+      },
+      "id": "8f6ad147-d2ae-4fbb-89b0-c52a7d627009",
+      "name": "Build Opt Out Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const digits = ($json.text || '').replace(/\\D/g, '');\nconst match = digits.match(/(\\d{11}|\\d{14})/);\nreturn [\n  {\n    json: {\n      ...$json,\n      document: match ? match[1] : ''\n    }\n  }\n];"
+      },
+      "id": "1cc4a8f2-57af-4875-8d35-d20289a3b006",
+      "name": "Detect Document",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.PERPLEXITY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $env.PERPLEXITY_MODEL || 'sonar', temperature: 0, messages: [ { role: 'system', content: 'Classifique mensagens de clientes de contas a receber. Responda somente JSON valido com o formato {\"intent\":\"ask_document|segunda_via_boleto|default_operator\",\"reason\":\"texto curto\"}. Use ask_document quando o cliente estiver falando de boleto, vencimento, segunda via, reenvio, pagamento ou contas a receber e ainda nao informou CPF/CNPJ de 11 ou 14 digitos. Use segunda_via_boleto somente quando a intencao estiver ligada a perda, esquecimento, reenvio ou localizacao de boleto e o documento ja estiver presente. Use default_operator para qualquer outro caso.' }, { role: 'user', content: `Mensagem: ${$json.text}\\nDocumento identificado: ${$json.document || 'nao'}` } ], web_search_options: { disable_search: true } }) }}",
+        "options": {}
+      },
+      "id": "af6bf019-44d3-4f01-8d13-7448fe4d6007",
+      "name": "Classify Intent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2140,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Detect Document\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst boletoKeywords = ['boleto', '2 via', 'segunda via', 'vencimento', 'reenviar', 'reenvio', 'linha digitavel', 'pagamento', 'contas a receber'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsReceivables = boletoKeywords.some((keyword) => normalized.includes(keyword));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nif (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_resume_with_document' : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
+      },
+      "id": "26b0fa81-8160-4549-8be8-e088d2df9008",
+      "name": "Parse Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.intent}}",
+              "operation": "equal",
+              "value2": "ask_document"
+            }
+          ]
+        }
+      },
+      "id": "2a03d618-b33b-49bd-9b4d-064c0ca2e009",
+      "name": "If Ask Document",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2620,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro.',\n      logIntent: 'ask_document'\n    }\n  }\n];"
+      },
+      "id": "42861ad1-5712-4342-89ba-8938f9b67010",
+      "name": "Build Ask Document Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_document_second_via', ActiveFlow: 'segunda_via_boleto', LastIntent: 'ask_document', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "9db90e3e-bb58-444d-858d-7be60e62b023",
+      "name": "Set Awaiting Document State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.intent}}",
+              "operation": "equal",
+              "value2": "segunda_via_boleto"
+            }
+          ]
+        }
+      },
+      "id": "4f5146bf-0f7a-44a5-98cf-77c6db9cf011",
+      "name": "If Second Via",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: $json.fallbackMessage,\n      logIntent: 'default_operator'\n    }\n  }\n];"
+      },
+      "id": "cb00fb14-0e6b-4c79-96f6-0158a1af9012",
+      "name": "Build Fallback Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3100,
+        840
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/ValidarCprfTelefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "TenantId",
+              "value": "1"
+            },
+            {
+              "name": "Cprf",
+              "value": "={{$json.document}}"
+            },
+            {
+              "name": "Telefone",
+              "value": "={{$json.phone}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "20a30907-0a05-49af-b8bf-084ef70fd013",
+      "name": "Validate Document And Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.CprfValido && $json.TelefoneValido}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "4aa68638-ae57-4f63-a196-c1cb948cc014",
+      "name": "If Validation OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3340,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nreturn [\n  {\n    json: {\n      ...context,\n      replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.',\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+      },
+      "id": "1d74ec64-8b26-4f6f-89eb-4ad2977b1015",
+      "name": "Build Validation Error Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3580,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetBoletoByCprf",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Cprf",
+              "value": "={{$node[\"Parse Intent\"].json.document}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "af469c89-2356-482d-9542-ee438c6f2016",
+      "name": "Get Boleto By Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3580,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [\n    {\n      json: {\n        ...context,\n        canUpdate: false,\n        replyText: 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.',\n        logIntent: 'segunda_via_boleto'\n      }\n    }\n  ];\n}\nconst currentDate = new Date(`${boleto.Vencimento}T00:00:00Z`);\ncurrentDate.setUTCDate(currentDate.getUTCDate() + Number(context.defaultDelayDays || 3));\nconst newDueDate = currentDate.toISOString().slice(0, 10);\nreturn [\n  {\n    json: {\n      ...context,\n      canUpdate: true,\n      boletoId: boleto.Identificador,\n      tenantId: 1,\n      currentDueDate: boleto.Vencimento,\n      newDueDate,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+      },
+      "id": "2f88574f-3a8b-47b5-b9e1-54f853944017",
+      "name": "Prepare Due Date Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3820,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.canUpdate}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "ac570493-ef92-4fbb-a4d1-456dc79da018",
+      "name": "If Can Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4060,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/UpdateBoletoDueDate",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "BoletoId",
+              "value": "={{$json.boletoId}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "={{$json.tenantId}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ RequestedDocument: $json.document, RequestedPhone: $json.phone, CurrentDueDate: $json.currentDueDate, NewDueDate: $json.newDueDate, Reason: 'Perda ou esquecimento de boleto', Channel: 'whatsapp', RequestedBy: 'cliente' }) }}",
+        "options": {}
+      },
+      "id": "0a7a52c6-f796-4d56-a6df-307d7348a019",
+      "name": "Update Due Date",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4300,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Prepare Due Date Update\"].json;\nreturn [\n  {\n    json: {\n      ...context,\n      replyText: `Localizamos seu boleto e prorrogamos o vencimento para ${context.newDueDate}. Linha digitavel: ${context.linhaDigitavel}`,\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+      },
+      "id": "d9bf8c3f-d65d-4891-8374-73a8e8b25020",
+      "name": "Build Success Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4540,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://waha:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{$env.WAHA_API_KEY || 'changeme'}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: $json.session || 'default', chatId: $json.chatId, text: $json.replyText }) }}",
+        "options": {}
+      },
+      "id": "82cc7038-ed75-4f16-81a6-fc3fd2e8d021",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4780,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, DocumentoInformado: $json.document || null, Role: 'assistant', Message: $json.replyText, Intent: $json.logIntent, Channel: 'whatsapp', Metadata: { chatId: $json.chatId, classificationReason: $json.classificationReason || '' } }) }}",
+        "options": {}
+      },
+      "id": "dd8ab6eb-613a-45d4-8eb7-94022563b022",
+      "name": "Log Outbound Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5020,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ClearConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "5930daa6-2901-49df-b2f1-182621b4f024",
+      "name": "Clear Conversation State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4780,
+        340
+      ]
+    }
+  ],
+  "connections": {
+    "WAHA Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Incoming Message": {
+      "main": [
+        [
+          {
+            "node": "Log Inbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Inbound Chat": {
+      "main": [
+        [
+          {
+            "node": "Get MVP Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get MVP Config": {
+      "main": [
+        [
+          {
+            "node": "Get Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Merge Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Config": {
+      "main": [
+        [
+          {
+            "node": "Detect Opt Out Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Opt Out Command": {
+      "main": [
+        [
+          {
+            "node": "If Opt Out Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Opt Out Command": {
+      "main": [
+        [
+          {
+            "node": "Set WhatsApp Opt Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Detect Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set WhatsApp Opt Out": {
+      "main": [
+        [
+          {
+            "node": "Build Opt Out Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Opt Out Reply": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Document": {
+      "main": [
+        [
+          {
+            "node": "Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent": {
+      "main": [
+        [
+          {
+            "node": "If Ask Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Ask Document": {
+      "main": [
+        [
+          {
+            "node": "Build Ask Document Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Second Via",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Ask Document Reply": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Document State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Awaiting Document State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Second Via": {
+      "main": [
+        [
+          {
+            "node": "Validate Document And Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Fallback Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Fallback Reply": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Document And Phone": {
+      "main": [
+        [
+          {
+            "node": "If Validation OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Validation OK": {
+      "main": [
+        [
+          {
+            "node": "Get Boleto By Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Validation Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Validation Error Reply": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Boleto By Document": {
+      "main": [
+        [
+          {
+            "node": "Prepare Due Date Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Due Date Update": {
+      "main": [
+        [
+          {
+            "node": "If Can Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Can Update": {
+      "main": [
+        [
+          {
+            "node": "Update Due Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Due Date": {
+      "main": [
+        [
+          {
+            "node": "Build Success Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Reply": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "6984fa08-6611-4e0f-bf30-2fa8e861f901",
+  "meta": {},
+  "pinData": {},
+  "tags": []
+}
