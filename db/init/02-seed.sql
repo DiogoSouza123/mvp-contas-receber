@@ -7,8 +7,9 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO contatos (cliente_id, nome, email, telefone, padrao)
 VALUES
-    (1001, 'Financeiro Alpha', 'financeiro@alpha.com', '5511999990001', TRUE),
+    (1001, 'Financeiro Alpha', 'financeiro@alpha.com', '5511999990001', FALSE),
     (1001, 'Portaria Alpha', 'portaria@alpha.com', '5511999990002', FALSE),
+    (1001, 'Diogo Teste', 'diogo@teste.local', '5511984523415', TRUE),
     (1002, 'Financeiro Beta', 'financeiro@beta.com', '5511999990003', TRUE),
     (1003, 'Financeiro Gama', 'financeiro@gama.com', '5511999990004', TRUE)
 ON CONFLICT DO NOTHING;

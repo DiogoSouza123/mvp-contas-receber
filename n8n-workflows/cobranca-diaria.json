@@ -181,12 +181,25 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "value1": "={{$json.Allowed}}",
-              "operation": "isTrue"
+              "id": "1e1a9c0d-c31f-4a0f-9d7e-bd35fe193a10",
+              "leftValue": "={{$json.Allowed}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "bc1b48b1-1a69-41bd-820d-e2ea15924009",
