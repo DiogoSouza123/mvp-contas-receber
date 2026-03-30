@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: mvp-postgres
     environment:
-      POSTGRES_DB: mvp_recebiveis
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -22,17 +22,17 @@ services:
       - knowledge-base
     environment:
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mvp_recebiveis
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       DEFAULT_DELAY_DAYS: 3
       DAILY_RUN_TIME: 08:00
       DEFAULT_FALLBACK_MESSAGE: Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.
-      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
-      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL:-http://waha:3000}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-qwen2.5vl:3b}
-      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
-      DOC_EXTRACTOR_BASE_URL: ${DOC_EXTRACTOR_BASE_URL:-http://doc-extractor:8010}
-      KNOWLEDGE_BASE_URL: ${KNOWLEDGE_BASE_URL:-http://knowledge-base:8011}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
+      DOC_EXTRACTOR_BASE_URL: ${DOC_EXTRACTOR_BASE_URL}
+      KNOWLEDGE_BASE_URL: ${KNOWLEDGE_BASE_URL}
     ports:
       - "3000:3000"
 
@@ -41,10 +41,10 @@ services:
       context: ./doc-extractor
     container_name: mvp-doc-extractor
     environment:
-      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
-      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL:-http://waha:3000}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
     ports:
       - "8010:8010"
 
@@ -53,12 +53,12 @@ services:
       context: ./knowledge-base
     container_name: mvp-knowledge-base
     environment:
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
       KNOWLEDGE_BASE_SOURCE_DIR: /app/source
       KNOWLEDGE_BASE_INDEX_DIR: /app/index
-      KNOWLEDGE_BASE_TOP_K: ${KNOWLEDGE_BASE_TOP_K:-4}
-      KNOWLEDGE_BASE_MIN_SCORE: ${KNOWLEDGE_BASE_MIN_SCORE:-1.2}
+      KNOWLEDGE_BASE_TOP_K: ${KNOWLEDGE_BASE_TOP_K}
+      KNOWLEDGE_BASE_MIN_SCORE: ${KNOWLEDGE_BASE_MIN_SCORE}
     ports:
       - "8011:8011"
     volumes:
@@ -78,14 +78,14 @@ services:
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_PORT: 5432
-      DB_POSTGRESDB_DATABASE: mvp_recebiveis
-      DB_POSTGRESDB_USER: postgres
-      DB_POSTGRESDB_PASSWORD: postgres
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
       N8N_RUNNERS_ENABLED: "true"
       GENERIC_TIMEZONE: America/Sao_Paulo
-      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
-      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY:-}
-      PERPLEXITY_MODEL: ${PERPLEXITY_MODEL:-sonar}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY}
+      PERPLEXITY_MODEL: ${PERPLEXITY_MODEL}
     ports:
       - "5678:5678"
     volumes:
@@ -95,11 +95,11 @@ services:
     image: devlikeapro/waha:latest
     container_name: mvp-waha
     environment:
-      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
-      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
-      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:-a7c9d3f1wahaAdmin2026}
-      WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME:-admin}
-      WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD:-a7c9d3f1wahaAdmin2026}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME}
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD}
+      WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME}
+      WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD}
       WHATSAPP_DEFAULT_ENGINE: NOWEB
     ports:
       - "3001:3000"

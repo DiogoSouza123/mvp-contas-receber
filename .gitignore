@@ -5,7 +5,6 @@ dist/
 n8n_data/
 postgres_data/
 coverage/
-knowledge-base/source/*
-!knowledge-base/source/.gitkeep
-knowledge-base/index/*
-!knowledge-base/index/.gitkeep
+knowledge-base/source/
+knowledge-base/index/
+tmp-*.json
