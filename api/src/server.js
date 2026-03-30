@@ -1574,6 +1574,67 @@ app.post(
   }
 );
 
+app.post(`${basePath}/KnowledgeBaseAnswer`, async (req, res, next) => {
+  try {
+    const {
+      Question,
+      Telefone = '',
+      MaxChunks = null,
+      PassThrough = {},
+    } = req.body || {};
+
+    if (!Question) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'Question e obrigatoria.',
+      });
+    }
+
+    const knowledgeBaseUrl =
+      process.env.KNOWLEDGE_BASE_URL || 'http://knowledge-base:8011';
+
+    const response = await fetch(`${knowledgeBaseUrl}/answer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Question,
+        Telefone,
+        MaxChunks,
+      }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(
+        `Falha ao consultar knowledge-base: ${response.status} ${details}`
+      );
+    }
+
+    const answer = await response.json();
+
+    return res.json({
+      Success: true,
+      Found: Boolean(answer.found),
+      Answer: answer.answer || '',
+      Confidence: Number(answer.confidence || 0),
+      Sources: answer.sources || [],
+      TopScore: Number(answer.topScore || 0),
+      Question,
+      Telefone,
+      ...PassThrough,
+      knowledgeBaseFound: Boolean(answer.found),
+      knowledgeBaseAnswer: answer.answer || '',
+      knowledgeBaseSources: answer.sources || [],
+      knowledgeBaseConfidence: Number(answer.confidence || 0),
+      knowledgeBaseTopScore: Number(answer.topScore || 0),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post(`${basePath}/CheckWhatsAppPolicy`, async (req, res, next) => {
   try {
     const {

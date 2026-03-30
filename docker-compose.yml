@@ -19,6 +19,7 @@ services:
     depends_on:
       - postgres
       - doc-extractor
+      - knowledge-base
     environment:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mvp_recebiveis
@@ -31,6 +32,7 @@ services:
       OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-qwen2.5vl:3b}
       OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
       DOC_EXTRACTOR_BASE_URL: ${DOC_EXTRACTOR_BASE_URL:-http://doc-extractor:8010}
+      KNOWLEDGE_BASE_URL: ${KNOWLEDGE_BASE_URL:-http://knowledge-base:8011}
     ports:
       - "3000:3000"
 
@@ -45,6 +47,23 @@ services:
       OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
     ports:
       - "8010:8010"
+
+  knowledge-base:
+    build:
+      context: ./knowledge-base
+    container_name: mvp-knowledge-base
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
+      KNOWLEDGE_BASE_SOURCE_DIR: /app/source
+      KNOWLEDGE_BASE_INDEX_DIR: /app/index
+      KNOWLEDGE_BASE_TOP_K: ${KNOWLEDGE_BASE_TOP_K:-4}
+      KNOWLEDGE_BASE_MIN_SCORE: ${KNOWLEDGE_BASE_MIN_SCORE:-1.2}
+    ports:
+      - "8011:8011"
+    volumes:
+      - ./knowledge-base/source:/app/source
+      - ./knowledge-base/index:/app/index
 
   n8n:
     image: n8nio/n8n:1.84.1

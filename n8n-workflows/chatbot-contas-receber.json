@@ -246,7 +246,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Prepare Classification Context\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst secondViaKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'];\nconst dueDateKeywords = ['alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido', 'solicitar alteracao de vencimento'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsSecondVia = secondViaKeywords.some((keyword) => normalized.includes(keyword));\nconst mentionsDueDate = dueDateKeywords.some((keyword) => normalized.includes(keyword)) || (normalized.includes('vencimento') && (normalized.includes('alter') || normalized.includes('venc')));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nconst menuOption = normalized.match(/^(1|2|3)$/)?.[1] || '';\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nlet nextFlow = activeFlow || '';\nif (state === 'awaiting_menu_selection') {\n  if (menuOption === '1') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n    classificationReason = 'menu_option_second_via';\n  } else if (menuOption === '2') {\n    intent = 'ask_document';\n    nextFlow = 'alteracao_vencimento';\n    classificationReason = 'menu_option_due_date';\n  } else if (menuOption === '3') {\n    intent = 'default_operator';\n    classificationReason = 'menu_option_operator';\n  } else if (requestsHuman) {\n    intent = 'default_operator';\n    classificationReason = 'menu_handoff_keyword';\n  } else if (mentionsDueDate) {\n    nextFlow = 'alteracao_vencimento';\n    intent = hasDocument ? 'segunda_via_boleto' : 'ask_document';\n    classificationReason = hasDocument ? 'menu_due_date_with_document' : 'menu_due_date_without_document';\n  } else if (mentionsSecondVia || context.hasImage || documentOnlyMessage) {\n    nextFlow = 'segunda_via_boleto';\n    intent = hasDocument || context.hasImage || documentOnlyMessage ? (hasDocument ? 'segunda_via_boleto' : 'ask_document') : 'ask_document';\n    classificationReason = hasDocument ? 'menu_second_via_with_document' : 'menu_second_via_without_document';\n  } else {\n    intent = 'show_welcome_menu';\n    classificationReason = 'menu_repeat';\n  }\n} else if (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsDueDate || activeFlow === 'alteracao_vencimento')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_with_document';\n} else if (!hasDocument && mentionsDueDate) {\n  intent = 'ask_document';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_without_document';\n} else if (hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto' || context.documentSource === 'image_paddle_ocr' || context.documentSource === 'image_ollama')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_resume_with_document' : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n  } else if (hasDocument && intent === 'segunda_via_boleto') {\n    nextFlow = activeFlow || 'segunda_via_boleto';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      nextFlow,\n      resolvedFlow: nextFlow || activeFlow || 'segunda_via_boleto',\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Prepare Classification Context\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst secondViaKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'];\nconst dueDateKeywords = ['alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido', 'solicitar alteracao de vencimento'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst knowledgeKeywords = ['qual', 'quais', 'onde', 'como', 'quando', 'endereco', 'telefone', 'email', 'e-mail', 'horario', 'empresa', 'nippon', '?'];\nconst tokenCount = normalized ? normalized.split(' ').filter(Boolean).length : 0;\nconst mentionsSecondVia = secondViaKeywords.some((keyword) => normalized.includes(keyword));\nconst mentionsDueDate = dueDateKeywords.some((keyword) => normalized.includes(keyword)) || (normalized.includes('vencimento') && (normalized.includes('alter') || normalized.includes('venc')));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nconst looksLikeKnowledgeQuery = knowledgeKeywords.some((keyword) => rawText.toLowerCase().includes(keyword) || normalized.includes(keyword)) || tokenCount >= 4;\nconst menuOption = normalized.match(/^(1|2|3)$/)?.[1] || '';\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nlet nextFlow = activeFlow || '';\nif (state === 'awaiting_menu_selection') {\n  if (menuOption === '1') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n    classificationReason = 'menu_option_second_via';\n  } else if (menuOption === '2') {\n    intent = 'ask_document';\n    nextFlow = 'alteracao_vencimento';\n    classificationReason = 'menu_option_due_date';\n  } else if (menuOption === '3') {\n    intent = 'default_operator';\n    classificationReason = 'menu_option_operator';\n  } else if (requestsHuman) {\n    intent = 'default_operator';\n    classificationReason = 'menu_handoff_keyword';\n  } else if (mentionsDueDate) {\n    nextFlow = 'alteracao_vencimento';\n    intent = hasDocument ? 'segunda_via_boleto' : 'ask_document';\n    classificationReason = hasDocument ? 'menu_due_date_with_document' : 'menu_due_date_without_document';\n  } else if (mentionsSecondVia || context.hasImage || documentOnlyMessage) {\n    nextFlow = 'segunda_via_boleto';\n    intent = hasDocument || context.hasImage || documentOnlyMessage ? (hasDocument ? 'segunda_via_boleto' : 'ask_document') : 'ask_document';\n    classificationReason = hasDocument ? 'menu_second_via_with_document' : 'menu_second_via_without_document';\n  } else if (looksLikeKnowledgeQuery) {\n    intent = 'default_operator';\n    classificationReason = 'menu_free_question';\n  } else {\n    intent = 'show_welcome_menu';\n    classificationReason = 'menu_repeat';\n  }\n} else if (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsDueDate || activeFlow === 'alteracao_vencimento')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_with_document';\n} else if (!hasDocument && mentionsDueDate) {\n  intent = 'ask_document';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_without_document';\n} else if (hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto' || context.documentSource === 'image_paddle_ocr' || context.documentSource === 'image_ollama')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_resume_with_document' : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n  } else if (hasDocument && intent === 'segunda_via_boleto') {\n    nextFlow = activeFlow || 'segunda_via_boleto';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      nextFlow,\n      resolvedFlow: nextFlow || activeFlow || 'segunda_via_boleto',\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
       },
       "id": "26b0fa81-8160-4549-8be8-e088d2df9008",
       "name": "Parse Intent",
@@ -377,6 +377,76 @@
         840
       ],
       "notes": "Envia a mensagem padrao de encaminhamento para operador humano quando o assunto sai do escopo do bot.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/KnowledgeBaseAnswer",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Question: $json.text, Telefone: $json.phone, MaxChunks: 4, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "2f0b8459-d0a2-4385-933f-1c6c1bf4d901",
+      "name": "Query Knowledge Base",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        680
+      ],
+      "notes": "Consulta a base de conhecimento local da Nippon Elevadores antes de encaminhar o assunto para operador.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "0d95ef4a-16fd-4e4e-9f6c-9ed5070df0f2",
+              "leftValue": "={{$json.knowledgeBaseFound || $json.Found}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "9659f973-f27e-4b2c-9547-8c7694cd7d54",
+      "name": "If KB Answer Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3340,
+        680
+      ],
+      "notes": "Valida se a base de conhecimento encontrou uma resposta curta e confiavel para a pergunta do cliente.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: $json.knowledgeBaseAnswer || $json.Answer || '',\n      logIntent: 'knowledge_base_answer',\n      classificationReason: 'knowledge_base_answer'\n    }\n  }\n];"
+      },
+      "id": "1ec7f9b3-e52e-4bf0-8c3d-0c336a0cae93",
+      "name": "Build KB Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3580,
+        600
+      ],
+      "notes": "Monta a resposta objetiva retornada pelo RAG quando a base de conhecimento cobre o assunto do cliente.",
       "notesInFlow": true
     },
     {
@@ -959,7 +1029,7 @@
         120
       ],
       "parameters": {
-        "content": "## Menu e interpretacao da intencao\n\nAqui o fluxo decide se deve enviar a mensagem de boas-vindas, repetir o menu ou seguir direto com a solicitacao do cliente.\n\nAs intencoes principais sao:\n- segunda via de boleto\n- alteracao de vencimento\n- encaminhamento para operador",
+        "content": "## Menu e interpretacao da intencao\n\nAqui o fluxo decide se deve enviar a mensagem de boas-vindas, repetir o menu ou seguir direto com a solicitacao do cliente.\n\nAs intencoes principais sao:\n- segunda via de boleto\n- alteracao de vencimento\n- consulta na base de conhecimento para outros assuntos\n- encaminhamento para operador quando nao houver resposta",
         "width": 620,
         "height": 260,
         "color": 6
@@ -1205,7 +1275,47 @@
         ],
         [
           {
+            "node": "Query Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "If KB Answer Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If KB Answer Found": {
+      "main": [
+        [
+          {
+            "node": "Build KB Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Build Fallback Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build KB Reply": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation State",
             "type": "main",
             "index": 0
           }
@@ -1500,7 +1610,7 @@
   "settings": {},
   "versionId": "6984fa08-6611-4e0f-bf30-2fa8e861f901",
   "meta": {
-    "templateDescription": "Chatbot de contas a receber da Nippon Elevadores com atendimento inicial via WhatsApp, menu de boas-vindas, segunda via de boleto, alteracao de vencimento, envio de foto do boleto e fallback para operador humano."
+    "templateDescription": "Chatbot de contas a receber da Nippon Elevadores com atendimento inicial via WhatsApp, menu de boas-vindas, segunda via de boleto, alteracao de vencimento, envio de foto do boleto, consulta a base de conhecimento e fallback para operador humano."
   },
   "pinData": {},
   "tags": [
