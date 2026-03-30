@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message') {\n  return [];\n}\nif (payload.fromMe === true) {\n  return [];\n}\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) {\n  return [];\n}\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim());\nif (!messageText) {\n  return [];\n}\nconst senderId = String(\n  payload.remoteJidAlt ||\n  payload._data?.remoteJidAlt ||\n  payload._data?.id?.remoteJidAlt ||\n  payload.author ||\n  payload.participant ||\n  payload.key?.participant ||\n  chatId\n).trim();\nconst phone = senderId\n  .replace(/@s\\.whatsapp\\.net$/i, '')\n  .replace(/@c\\.us$/i, '')\n  .replace(/@lid$/i, '');\nreturn [\n  {\n    json: {\n      session: envelope.session || $json.session || 'default',\n      event,\n      phone,\n      chatId,\n      senderId,\n      text: String(messageText).trim(),\n      rawPayload: payload,\n      rawEnvelope: envelope\n    }\n  }\n];"
+        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message') {\n  return [];\n}\nif (payload.fromMe === true) {\n  return [];\n}\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) {\n  return [];\n}\nconst mediaUrl = String(payload.media?.url || '').trim();\nconst mediaMimeType = String(payload.media?.mimetype || '').trim();\nconst hasImage = Boolean(payload.hasMedia && mediaUrl && /^image\\//i.test(mediaMimeType));\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim()) || '';\nif (!messageText && !hasImage) {\n  return [];\n}\nconst senderId = String(\n  payload.remoteJidAlt ||\n  payload._data?.remoteJidAlt ||\n  payload._data?.id?.remoteJidAlt ||\n  payload.author ||\n  payload.participant ||\n  payload.key?.participant ||\n  chatId\n).trim();\nconst phone = senderId\n  .replace(/@s\\.whatsapp\\.net$/i, '')\n  .replace(/@c\\.us$/i, '')\n  .replace(/@lid$/i, '');\nconst normalizedText = String(messageText || '').trim();\nreturn [\n  {\n    json: {\n      session: envelope.session || $json.session || 'default',\n      event,\n      phone,\n      chatId,\n      senderId,\n      text: normalizedText,\n      logText: normalizedText || (hasImage ? '[imagem recebida]' : ''),\n      hasMedia: Boolean(payload.hasMedia),\n      hasImage,\n      mediaUrl,\n      mediaMimeType,\n      rawPayload: payload,\n      rawEnvelope: envelope\n    }\n  }\n];"
       },
       "id": "b1282d33-ee0e-4f34-bf6b-b115837b7002",
       "name": "Normalize Incoming Message",
@@ -37,7 +37,7 @@
         "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Role: 'user', Message: $json.text, Channel: 'whatsapp', Metadata: { event: $json.event, chatId: $json.chatId } }) }}",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Role: 'user', Message: $json.logText || $json.text || '[mensagem sem texto]', Channel: 'whatsapp', Metadata: { event: $json.event, chatId: $json.chatId, hasImage: $json.hasImage || false, mediaMimeType: $json.mediaMimeType || '' } }) }}",
         "options": {}
       },
       "id": "c7276b6b-756d-4114-9a07-4c0fd2f39003",
@@ -208,7 +208,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $env.PERPLEXITY_MODEL || 'sonar', temperature: 0, messages: [ { role: 'system', content: 'Classifique mensagens de clientes de contas a receber. Responda somente JSON valido com o formato {\"intent\":\"ask_document|segunda_via_boleto|default_operator\",\"reason\":\"texto curto\"}. Use ask_document quando o cliente estiver falando de boleto, vencimento, segunda via, reenvio, pagamento ou contas a receber e ainda nao informou CPF/CNPJ de 11 ou 14 digitos. Use segunda_via_boleto somente quando a intencao estiver ligada a perda, esquecimento, reenvio ou localizacao de boleto e o documento ja estiver presente. Use default_operator para qualquer outro caso.' }, { role: 'user', content: `Mensagem: ${$json.text}\\nDocumento identificado: ${$json.document || 'nao'}` } ], web_search_options: { disable_search: true } }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $env.PERPLEXITY_MODEL || 'sonar', temperature: 0, messages: [ { role: 'system', content: 'Classifique mensagens de clientes de contas a receber. Responda somente JSON valido com o formato {\"intent\":\"ask_document|segunda_via_boleto|default_operator\",\"reason\":\"texto curto\"}. Use ask_document quando o cliente estiver falando de boleto, vencimento, segunda via, reenvio, pagamento ou contas a receber e ainda nao informou CPF/CNPJ de 11 ou 14 digitos. Use segunda_via_boleto somente quando a intencao estiver ligada a perda, esquecimento, reenvio ou localizacao de boleto e o documento ja estiver presente. Use default_operator para qualquer outro caso.' }, { role: 'user', content: 'Mensagem: ' + ($json.text || 'nao informada') + '\\nDocumento identificado: ' + ($json.document || 'nao') + '\\nOrigem do documento: ' + ($json.documentSource || 'texto') } ], web_search_options: { disable_search: true } }) }}",
         "options": {}
       },
       "id": "af6bf019-44d3-4f01-8d13-7448fe4d6007",
@@ -222,7 +222,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Detect Document\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst boletoKeywords = ['boleto', '2 via', 'segunda via', 'vencimento', 'reenviar', 'reenvio', 'linha digitavel', 'pagamento', 'contas a receber'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsReceivables = boletoKeywords.some((keyword) => normalized.includes(keyword));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nif (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_resume_with_document' : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Prepare Classification Context\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst boletoKeywords = ['boleto', '2 via', 'segunda via', 'vencimento', 'reenviar', 'reenvio', 'linha digitavel', 'pagamento', 'contas a receber'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsReceivables = boletoKeywords.some((keyword) => normalized.includes(keyword));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nif (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto' || context.documentSource === 'image_ollama')) {\n  intent = 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document_second_via'\n    ? 'state_resume_with_document'\n    : context.documentSource === 'image_ollama'\n      ? 'image_document_extracted'\n      : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
       },
       "id": "26b0fa81-8160-4549-8be8-e088d2df9008",
       "name": "Parse Intent",
@@ -268,7 +268,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro.',\n      logIntent: 'ask_document'\n    }\n  }\n];"
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.',\n      logIntent: 'ask_document'\n    }\n  }\n];"
       },
       "id": "42861ad1-5712-4342-89ba-8938f9b67010",
       "name": "Build Ask Document Reply",
@@ -359,7 +359,7 @@
             },
             {
               "name": "Telefone",
-                "value": "={{String($json.rawPayload?._data?.key?.remoteJidAlt || $json.phone || '').replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, '')}}"
+              "value": "={{String($json.rawPayload?._data?.key?.remoteJidAlt || $json.phone || '').replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, '')}}"
             }
           ]
         },
@@ -603,6 +603,129 @@
         4780,
         340
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      needsVisionExtraction: Boolean($json.hasImage && $json.mediaUrl && !$json.document)\n    }\n  }\n];"
+      },
+      "id": "2cfe4587-cc97-4686-a1b2-visioninput0001",
+      "name": "Detect Media Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "5a84f10a-vision-need-true",
+              "leftValue": "={{$json.needsVisionExtraction}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "7eef9a02-9b5d-4f9e-bd8d-visionif00002",
+      "name": "If Vision Extraction Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ExtractDocumentFromWhatsAppImage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ MediaUrl: $json.mediaUrl, MimeType: $json.mediaMimeType, Caption: $json.text || \"\", PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "6aa31dd2-e3fd-4f5f-885b-visionhttp0003",
+      "name": "Extract Document From Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2620,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "86ec8e9b-vision-found-true",
+              "leftValue": "={{Boolean($json.document)}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "909df828-2980-4d67-b999-visionif00004",
+      "name": "If Vision Document Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: 'Nao consegui identificar o CPF ou CNPJ na imagem. Se preferir, envie o documento digitado ou uma foto mais legivel do boleto.',\n      logIntent: 'ask_document'\n    }\n  }\n];"
+      },
+      "id": "ba9da80a-f128-4544-bca3-visionfail005",
+      "name": "Build Image Document Failure Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3100,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const nextItem = { ...$json };\nif (nextItem.documentSource === 'image_ollama' && !String(nextItem.text || '').trim()) {\n  nextItem.text = 'foto do boleto';\n}\nreturn [{ json: nextItem }];"
+      },
+      "id": "0ee0c627-4a86-4a9d-a70d-preparectx006",
+      "name": "Prepare Classification Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        620
+      ]
     }
   ],
   "connections": {
@@ -727,7 +850,7 @@
       "main": [
         [
           {
-            "node": "Classify Intent",
+            "node": "Detect Media Input",
             "type": "main",
             "index": 0
           }
@@ -942,6 +1065,86 @@
           },
           {
             "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Media Input": {
+      "main": [
+        [
+          {
+            "node": "If Vision Extraction Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Vision Extraction Needed": {
+      "main": [
+        [
+          {
+            "node": "Extract Document From Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Classification Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Document From Image": {
+      "main": [
+        [
+          {
+            "node": "If Vision Document Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Vision Document Found": {
+      "main": [
+        [
+          {
+            "node": "Prepare Classification Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Image Document Failure Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Image Document Failure Reply": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Document State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Classification Context": {
+      "main": [
+        [
+          {
+            "node": "Classify Intent",
             "type": "main",
             "index": 0
           }

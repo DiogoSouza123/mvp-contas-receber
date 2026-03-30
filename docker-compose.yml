@@ -18,14 +18,33 @@ services:
     container_name: mvp-api
     depends_on:
       - postgres
+      - doc-extractor
     environment:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mvp_recebiveis
       DEFAULT_DELAY_DAYS: 3
       DAILY_RUN_TIME: 08:00
       DEFAULT_FALLBACK_MESSAGE: Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.
+      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
+      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL:-http://waha:3000}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-qwen2.5vl:3b}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
+      DOC_EXTRACTOR_BASE_URL: ${DOC_EXTRACTOR_BASE_URL:-http://doc-extractor:8010}
     ports:
       - "3000:3000"
+
+  doc-extractor:
+    build:
+      context: ./doc-extractor
+    container_name: mvp-doc-extractor
+    environment:
+      WAHA_API_KEY: ${WAHA_API_KEY:-changeme}
+      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL:-http://waha:3000}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-llama3:latest}
+    ports:
+      - "8010:8010"
 
   n8n:
     image: n8nio/n8n:1.84.1
