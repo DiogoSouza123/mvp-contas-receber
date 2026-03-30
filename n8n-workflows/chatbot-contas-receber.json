@@ -222,7 +222,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Prepare Classification Context\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst boletoKeywords = ['boleto', '2 via', 'segunda via', 'vencimento', 'reenviar', 'reenvio', 'linha digitavel', 'pagamento', 'contas a receber'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsReceivables = boletoKeywords.some((keyword) => normalized.includes(keyword));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nif (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto' || context.documentSource === 'image_ollama')) {\n  intent = 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document_second_via'\n    ? 'state_resume_with_document'\n    : context.documentSource === 'image_ollama'\n      ? 'image_document_extracted'\n      : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsReceivables || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  classificationReason = state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Prepare Classification Context\"].json;\nconst content = $json.choices?.[0]?.message?.content || '{\"intent\":\"default_operator\",\"reason\":\"empty\"}';\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = { intent: 'default_operator', reason: 'invalid_json' };\n}\nconst rawText = String(context.text || '').trim();\nconst normalized = rawText.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst hasDocument = Boolean(context.document);\nconst onlyDigitsOrPunctuation = /^[\\d\\s.\\-\\/]+$/.test(rawText);\nconst shortDocumentReply = rawText.length <= 22;\nconst documentOnlyMessage = hasDocument && onlyDigitsOrPunctuation && shortDocumentReply;\nconst state = context.conversationState || 'idle';\nconst activeFlow = context.conversationFlow || '';\nconst secondViaKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'];\nconst dueDateKeywords = ['alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido', 'solicitar alteracao de vencimento'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'];\nconst mentionsSecondVia = secondViaKeywords.some((keyword) => normalized.includes(keyword));\nconst mentionsDueDate = dueDateKeywords.some((keyword) => normalized.includes(keyword)) || (normalized.includes('vencimento') && (normalized.includes('alter') || normalized.includes('venc')));\nconst requestsHuman = handoffKeywords.some((keyword) => normalized.includes(keyword));\nconst menuOption = normalized.match(/^(1|2|3)$/)?.[1] || '';\nlet intent = 'default_operator';\nlet classificationReason = 'fallback_default';\nlet nextFlow = activeFlow || '';\nif (state === 'awaiting_menu_selection') {\n  if (menuOption === '1') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n    classificationReason = 'menu_option_second_via';\n  } else if (menuOption === '2') {\n    intent = 'ask_document';\n    nextFlow = 'alteracao_vencimento';\n    classificationReason = 'menu_option_due_date';\n  } else if (menuOption === '3') {\n    intent = 'default_operator';\n    classificationReason = 'menu_option_operator';\n  } else if (requestsHuman) {\n    intent = 'default_operator';\n    classificationReason = 'menu_handoff_keyword';\n  } else if (mentionsDueDate) {\n    nextFlow = 'alteracao_vencimento';\n    intent = hasDocument ? 'segunda_via_boleto' : 'ask_document';\n    classificationReason = hasDocument ? 'menu_due_date_with_document' : 'menu_due_date_without_document';\n  } else if (mentionsSecondVia || context.hasImage || documentOnlyMessage) {\n    nextFlow = 'segunda_via_boleto';\n    intent = hasDocument || context.hasImage || documentOnlyMessage ? (hasDocument ? 'segunda_via_boleto' : 'ask_document') : 'ask_document';\n    classificationReason = hasDocument ? 'menu_second_via_with_document' : 'menu_second_via_without_document';\n  } else {\n    intent = 'show_welcome_menu';\n    classificationReason = 'menu_repeat';\n  }\n} else if (requestsHuman) {\n  intent = 'default_operator';\n  classificationReason = 'handoff_keyword';\n} else if (documentOnlyMessage) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = 'document_only_message';\n} else if (hasDocument && (mentionsDueDate || activeFlow === 'alteracao_vencimento')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_with_document';\n} else if (!hasDocument && mentionsDueDate) {\n  intent = 'ask_document';\n  nextFlow = 'alteracao_vencimento';\n  classificationReason = 'due_date_without_document';\n} else if (hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto' || context.documentSource === 'image_paddle_ocr' || context.documentSource === 'image_ollama')) {\n  intent = 'segunda_via_boleto';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_resume_with_document' : 'document_with_receivables_context';\n} else if (!hasDocument && (mentionsSecondVia || state === 'awaiting_document' || state === 'awaiting_document_second_via' || activeFlow === 'segunda_via_boleto')) {\n  intent = 'ask_document';\n  nextFlow = activeFlow || 'segunda_via_boleto';\n  classificationReason = state === 'awaiting_document' || state === 'awaiting_document_second_via' ? 'state_waiting_for_document' : 'boleto_keyword_without_document';\n} else {\n  intent = parsed.intent || 'default_operator';\n  classificationReason = parsed.reason || 'llm_fallback';\n  if (!hasDocument && intent === 'segunda_via_boleto') {\n    intent = 'ask_document';\n    nextFlow = 'segunda_via_boleto';\n  } else if (hasDocument && intent === 'segunda_via_boleto') {\n    nextFlow = activeFlow || 'segunda_via_boleto';\n  }\n}\nreturn [\n  {\n    json: {\n      ...context,\n      intent,\n      nextFlow,\n      resolvedFlow: nextFlow || activeFlow || 'segunda_via_boleto',\n      classificationReason,\n      debugIntentOverride: documentOnlyMessage,\n      llmSuggestedIntent: parsed.intent || 'default_operator'\n    }\n  }\n];"
       },
       "id": "26b0fa81-8160-4549-8be8-e088d2df9008",
       "name": "Parse Intent",
@@ -268,7 +268,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      replyText: 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.',\n      logIntent: 'ask_document'\n    }\n  }\n];"
+        "jsCode": "const flow = $json.nextFlow || $json.resolvedFlow || $json.conversationFlow || 'segunda_via_boleto';\nconst replyText = flow === 'alteracao_vencimento'\n  ? 'Para solicitar a alteracao de vencimento, informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.'\n  : 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.';\nreturn [\n  {\n    json: {\n      ...$json,\n      replyText,\n      logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'ask_document'\n    }\n  }\n];"
       },
       "id": "42861ad1-5712-4342-89ba-8938f9b67010",
       "name": "Build Ask Document Reply",
@@ -285,7 +285,7 @@
         "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_document_second_via', ActiveFlow: 'segunda_via_boleto', LastIntent: 'ask_document', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_document', ActiveFlow: $json.nextFlow || $json.resolvedFlow || 'segunda_via_boleto', LastIntent: 'ask_document', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
         "options": {}
       },
       "id": "9db90e3e-bb58-444d-858d-7be60e62b023",
@@ -409,7 +409,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nreturn [\n  {\n    json: {\n      ...context,\n      replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.',\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nreturn [\n  {\n    json: {\n      ...context,\n      replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.',\n      logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto'\n    }\n  }\n];"
       },
       "id": "1d74ec64-8b26-4f6f-89eb-4ad2977b1015",
       "name": "Build Validation Error Reply",
@@ -449,7 +449,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [\n    {\n      json: {\n        ...context,\n        canUpdate: false,\n        replyText: 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.',\n        logIntent: 'segunda_via_boleto'\n      }\n    }\n  ];\n}\nconst currentDate = new Date(`${boleto.Vencimento}T00:00:00Z`);\ncurrentDate.setUTCDate(currentDate.getUTCDate() + Number(context.defaultDelayDays || 3));\nconst newDueDate = currentDate.toISOString().slice(0, 10);\nreturn [\n  {\n    json: {\n      ...context,\n      canUpdate: true,\n      boletoId: boleto.Identificador,\n      tenantId: 1,\n      currentDueDate: boleto.Vencimento,\n      newDueDate,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Parse Intent\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [\n    {\n      json: {\n        ...context,\n        canUpdate: false,\n        replyText: flow === 'alteracao_vencimento' ? 'Nao localizamos um boleto elegivel para alteracao de vencimento neste momento. Em breve um operador dara continuidade ao atendimento.' : 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.',\n        logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto'\n      }\n    }\n  ];\n}\nconst currentDate = new Date(`${boleto.Vencimento}T00:00:00Z`);\ncurrentDate.setUTCDate(currentDate.getUTCDate() + Number(context.defaultDelayDays || 3));\nconst newDueDate = currentDate.toISOString().slice(0, 10);\nreturn [\n  {\n    json: {\n      ...context,\n      resolvedFlow: flow,\n      canUpdate: true,\n      boletoId: boleto.Identificador,\n      tenantId: 1,\n      currentDueDate: boleto.Vencimento,\n      newDueDate,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto'\n    }\n  }\n];"
       },
       "id": "2f88574f-3a8b-47b5-b9e1-54f853944017",
       "name": "Prepare Due Date Update",
@@ -526,7 +526,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Prepare Due Date Update\"].json;\nreturn [\n  {\n    json: {\n      ...context,\n      replyText: `Localizamos seu boleto e prorrogamos o vencimento para ${context.newDueDate}. Linha digitavel: ${context.linhaDigitavel}`,\n      logIntent: 'segunda_via_boleto'\n    }\n  }\n];"
+        "jsCode": "const context = $item(0).$node[\"Prepare Due Date Update\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nconst closingText = 'Agradecemos o seu contato com a Nippon Elevadores. Este atendimento foi encerrado. Se precisar, estamos a disposicao.';\nconst replyText = flow === 'alteracao_vencimento'\n  ? `Solicitacao concluida. Prorrogamos o vencimento do seu boleto para ${context.newDueDate}. Linha digitavel: ${context.linhaDigitavel}\\n\\n${closingText}`\n  : `Localizamos seu boleto e prorrogamos o vencimento para ${context.newDueDate}. Linha digitavel: ${context.linhaDigitavel}\\n\\n${closingText}`;\nreturn [\n  {\n    json: {\n      ...context,\n      replyText,\n      logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto'\n    }\n  }\n];"
       },
       "id": "d9bf8c3f-d65d-4891-8374-73a8e8b25020",
       "name": "Build Success Reply",
@@ -726,6 +726,116 @@
         2860,
         620
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized = ($json.text || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst digits = normalized.replace(/\\D/g, '');\nconst hasDocument = /(\\d{14}|\\d{11})/.test(digits);\nconst secondViaKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'];\nconst dueDateKeywords = ['alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido'];\nconst handoffKeywords = ['humano', 'atendente', 'operador', 'suporte'];\nconst greetingKeywords = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'preciso de ajuda', 'quero ajuda', 'quero falar com voces', 'quero atendimento', 'ola tudo bem'];\nconst hasDirectIntent = Boolean($json.hasImage || hasDocument || secondViaKeywords.some((keyword) => normalized.includes(keyword)) || dueDateKeywords.some((keyword) => normalized.includes(keyword)) || handoffKeywords.some((keyword) => normalized.includes(keyword)));\nconst isGenericGreeting = greetingKeywords.some((keyword) => normalized === keyword || normalized.includes(keyword));\nconst shouldSendWelcome = ($json.conversationState === 'idle' || !$json.conversationStateFound) && !hasDirectIntent && Boolean(normalized) && isGenericGreeting;\nreturn [{ json: { ...$json, shouldSendWelcome } }];"
+      },
+      "id": "31ce5689-7850-43d2-a6cb-8d2d0f888001",
+      "name": "Detect Welcome Menu Need",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "welcome-need-true",
+              "leftValue": "={{$json.shouldSendWelcome}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "31ce5689-7850-43d2-a6cb-8d2d0f888002",
+      "name": "If Should Send Welcome",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, replyText: 'Ola! Bem-vindo(a) ao atendimento da Nippon Elevadores.\\n\\nEste canal pode auxiliar com assuntos de contas a receber. No momento, voce pode escolher uma das opcoes abaixo:\\n1. Solicitar segunda via de boleto\\n2. Solicitar alteracao de vencimento\\n3. Falar sobre outro assunto\\n\\nResponda com o numero da opcao desejada.\\nCaso necessario, um atendente dara continuidade ao seu atendimento.', logIntent: 'welcome_menu' } }];"
+      },
+      "id": "31ce5689-7850-43d2-a6cb-8d2d0f888003",
+      "name": "Build Welcome Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_menu_selection', ActiveFlow: '', LastIntent: 'welcome_menu', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "31ce5689-7850-43d2-a6cb-8d2d0f888004",
+      "name": "Set Awaiting Menu State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2620,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "show-welcome-menu",
+              "leftValue": "={{$json.intent}}",
+              "rightValue": "show_welcome_menu",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "31ce5689-7850-43d2-a6cb-8d2d0f888005",
+      "name": "If Show Welcome Menu",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        540
+      ]
     }
   ],
   "connections": {
@@ -817,7 +927,7 @@
         ],
         [
           {
-            "node": "Detect Document",
+            "node": "Detect Welcome Menu Need",
             "type": "main",
             "index": 0
           }
@@ -872,7 +982,7 @@
       "main": [
         [
           {
-            "node": "If Ask Document",
+            "node": "If Show Welcome Menu",
             "type": "main",
             "index": 0
           }
@@ -1145,6 +1255,80 @@
         [
           {
             "node": "Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Welcome Menu Need": {
+      "main": [
+        [
+          {
+            "node": "If Should Send Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Send Welcome": {
+      "main": [
+        [
+          {
+            "node": "Build Welcome Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Detect Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Welcome Reply": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Menu State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Awaiting Menu State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Show Welcome Menu": {
+      "main": [
+        [
+          {
+            "node": "Build Welcome Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Ask Document",
             "type": "main",
             "index": 0
           }
