@@ -20,7 +20,9 @@
       "position": [
         220,
         300
-      ]
+      ],
+      "notes": "Dispara automaticamente a rotina diaria de cobranca no horario configurado.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -34,7 +36,9 @@
       "position": [
         440,
         300
-      ]
+      ],
+      "notes": "Busca os parametros operacionais do MVP, como horario, janela de envio e mensagens padrao.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -47,7 +51,9 @@
       "position": [
         660,
         300
-      ]
+      ],
+      "notes": "Calcula a regra de vencimento para identificar os boletos que entram na cobranca do dia.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -78,7 +84,9 @@
       "position": [
         900,
         300
-      ]
+      ],
+      "notes": "Consulta na API os titulos vencidos que se enquadram na regra de inadimplencia.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -91,7 +99,9 @@
       "position": [
         1140,
         300
-      ]
+      ],
+      "notes": "Quebra a lista de inadimplentes em itens individuais para processamento um a um.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -118,7 +128,9 @@
       "position": [
         1380,
         300
-      ]
+      ],
+      "notes": "Busca os contatos do cliente para identificar o telefone que recebera a cobranca.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -145,7 +157,9 @@
       "position": [
         1620,
         300
-      ]
+      ],
+      "notes": "Localiza o boleto correspondente ao cliente para montar a mensagem de cobranca.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -158,7 +172,9 @@
       "position": [
         1860,
         300
-      ]
+      ],
+      "notes": "Monta a mensagem de cobranca e prepara telefone, chat e dados do boleto para envio.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -176,7 +192,9 @@
       "position": [
         2100,
         300
-      ]
+      ],
+      "notes": "Aplica as politicas de seguranca, como limite diario, cooldown e bloqueio por repeticao.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -209,7 +227,9 @@
       "position": [
         2340,
         300
-      ]
+      ],
+      "notes": "Permite o envio somente quando a politica de comunicacao aprovar a cobranca.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -240,7 +260,9 @@
       "position": [
         2580,
         240
-      ]
+      ],
+      "notes": "Envia a cobranca inicial ao cliente pelo WhatsApp.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -271,7 +293,73 @@
       "position": [
         2820,
         240
-      ]
+      ],
+      "notes": "Registra no banco o resultado do envio para auditoria e acompanhamento.",
+      "notesInFlow": true
+    },
+    {
+      "id": "5556c496-3b62-434c-9b26-b042d3a7e730",
+      "name": "Nota Geral - Cobranca Diaria",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        120,
+        20
+      ],
+      "parameters": {
+        "content": "## Cobranca diaria automatica\n\nEste workflow executa a rotina de cobranca inicial da Nippon Elevadores.\n\n### O que ele faz\n- roda automaticamente no horario configurado\n- identifica clientes com boletos vencidos\n- busca contatos e boleto correspondente\n- aplica politicas de seguranca antes do envio\n- dispara a mensagem de cobranca via WhatsApp\n- registra o resultado para auditoria\n\n### Resultado esperado\nPadronizar e acelerar o primeiro contato com inadimplentes.",
+        "width": 860,
+        "height": 260,
+        "color": 7
+      }
+    },
+    {
+      "id": "9dfe04af-6398-49bb-9a21-23bb51a6214d",
+      "name": "Nota - Consulta de Inadimplentes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        980,
+        40
+      ],
+      "parameters": {
+        "content": "## Consulta de inadimplentes\n\nEste bloco busca os parametros do MVP, calcula a janela de vencimento e consulta os titulos vencidos que entram na cobranca do dia.",
+        "width": 620,
+        "height": 220,
+        "color": 5
+      }
+    },
+    {
+      "id": "6e611c0c-2209-4192-a3a3-e6c7d097b4c6",
+      "name": "Nota - Preparacao da Cobranca",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        40
+      ],
+      "parameters": {
+        "content": "## Preparacao da cobranca\n\nAqui o workflow expande os registros, busca os contatos do cliente, localiza o boleto e monta a mensagem de cobranca com os dados necessarios para envio.",
+        "width": 700,
+        "height": 240,
+        "color": 4
+      }
+    },
+    {
+      "id": "f2867e9b-0975-47fe-a6e2-1ebd9cf0adef",
+      "name": "Nota - Politica e Registro",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2860,
+        40
+      ],
+      "parameters": {
+        "content": "## Politica de envio e registro\n\nAntes de enviar, o fluxo verifica limite diario, cooldown e regras anti-spam. Se permitido, envia a mensagem pelo WhatsApp e registra o status da cobranca no banco.",
+        "width": 700,
+        "height": 240,
+        "color": 3
+      }
     }
   ],
   "connections": {
@@ -401,7 +489,22 @@
   "active": false,
   "settings": {},
   "versionId": "91af5c72-0df1-4fdb-a921-4b143bb7e101",
-  "meta": {},
+  "meta": {
+    "templateDescription": "Workflow de cobranca diaria da Nippon Elevadores que identifica inadimplentes, busca contatos e boleto, aplica politicas anti-spam e envia a cobranca inicial por WhatsApp."
+  },
   "pinData": {},
-  "tags": []
+  "tags": [
+    {
+      "name": "cobranca"
+    },
+    {
+      "name": "contas a receber"
+    },
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "nippon elevadores"
+    }
+  ]
 }

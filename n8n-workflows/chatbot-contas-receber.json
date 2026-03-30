@@ -16,7 +16,9 @@
         220,
         420
       ],
-      "webhookId": "waha-contas-receber"
+      "webhookId": "waha-contas-receber",
+      "notes": "Recebe os eventos de mensagem enviados pelo WAHA para iniciar o atendimento no WhatsApp.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -29,7 +31,9 @@
       "position": [
         460,
         420
-      ]
+      ],
+      "notes": "Padroniza o payload recebido, identifica telefone, chat, texto e imagem, e prepara os dados para o restante do fluxo.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -47,7 +51,9 @@
       "position": [
         700,
         420
-      ]
+      ],
+      "notes": "Registra no banco a mensagem de entrada do cliente para rastreabilidade do atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -61,7 +67,9 @@
       "position": [
         940,
         420
-      ]
+      ],
+      "notes": "Busca os parametros configuraveis do MVP, como mensagens padrao e quantidade de dias para prorrogacao.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -84,7 +92,9 @@
       "position": [
         1180,
         280
-      ]
+      ],
+      "notes": "Consulta o estado atual da conversa para saber em que etapa o cliente esta.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -97,7 +107,9 @@
       "position": [
         1180,
         420
-      ]
+      ],
+      "notes": "Combina a mensagem recebida com os parametros do sistema e com o estado atual da conversa.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -110,7 +122,9 @@
       "position": [
         1420,
         420
-      ]
+      ],
+      "notes": "Verifica se o cliente enviou um comando para parar o recebimento de cobrancas automaticas.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -143,7 +157,9 @@
       "position": [
         1660,
         420
-      ]
+      ],
+      "notes": "Desvia o fluxo para opt-out somente quando a mensagem for um comando valido de bloqueio.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -161,7 +177,9 @@
       "position": [
         1900,
         280
-      ]
+      ],
+      "notes": "Registra a preferencia do cliente de nao receber novas cobrancas automaticas por WhatsApp.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -174,7 +192,9 @@
       "position": [
         2140,
         280
-      ]
+      ],
+      "notes": "Monta a resposta de confirmacao do opt-out para o cliente.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -187,7 +207,9 @@
       "position": [
         1900,
         540
-      ]
+      ],
+      "notes": "Extrai CPF ou CNPJ digitado pelo cliente quando ele envia o documento em texto.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -218,7 +240,9 @@
       "position": [
         2140,
         540
-      ]
+      ],
+      "notes": "Usa LLM para classificar mensagens ambiguas do cliente quando as regras do fluxo nao forem suficientes.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -231,7 +255,9 @@
       "position": [
         2380,
         540
-      ]
+      ],
+      "notes": "Consolida regras, estado da conversa e retorno da LLM para definir a proxima acao do atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -264,7 +290,9 @@
       "position": [
         2620,
         540
-      ]
+      ],
+      "notes": "Verifica se o proximo passo e pedir CPF, CNPJ ou foto do boleto para continuar o atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -277,7 +305,9 @@
       "position": [
         2860,
         400
-      ]
+      ],
+      "notes": "Monta a solicitacao de documento, adaptando a mensagem para segunda via ou alteracao de vencimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -295,7 +325,9 @@
       "position": [
         3100,
         400
-      ]
+      ],
+      "notes": "Salva o estado aguardando o documento do cliente para retomar o fluxo depois.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -328,7 +360,9 @@
       "position": [
         2860,
         680
-      ]
+      ],
+      "notes": "Direciona para o fluxo de boleto quando a intencao resolvida for segunda via ou alteracao de vencimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -341,7 +375,9 @@
       "position": [
         3100,
         840
-      ]
+      ],
+      "notes": "Envia a mensagem padrao de encaminhamento para operador humano quando o assunto sai do escopo do bot.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -372,7 +408,9 @@
       "position": [
         3100,
         640
-      ]
+      ],
+      "notes": "Valida se o documento informado pertence ao cliente da conversa, usando documento e telefone.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -405,7 +443,9 @@
       "position": [
         3340,
         640
-      ]
+      ],
+      "notes": "Permite continuar apenas quando documento e telefone forem validados com sucesso.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -418,7 +458,9 @@
       "position": [
         3580,
         780
-      ]
+      ],
+      "notes": "Informa ao cliente quando nao foi possivel validar o documento com o telefone da conversa.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -445,7 +487,9 @@
       "position": [
         3580,
         600
-      ]
+      ],
+      "notes": "Busca o boleto vinculado ao documento informado para dar continuidade ao atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -458,7 +502,9 @@
       "position": [
         3820,
         600
-      ]
+      ],
+      "notes": "Prepara os dados do boleto, a nova data e a resposta conforme o tipo de solicitacao.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -491,7 +537,9 @@
       "position": [
         4060,
         600
-      ]
+      ],
+      "notes": "Verifica se o boleto encontrado pode ser tratado automaticamente no fluxo.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -522,7 +570,9 @@
       "position": [
         4300,
         540
-      ]
+      ],
+      "notes": "Registra a prorrogacao do vencimento do boleto no mock da API.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -535,7 +585,9 @@
       "position": [
         4540,
         540
-      ]
+      ],
+      "notes": "Monta a resposta final com a linha digitavel, confirmacao da solicitacao e encerramento do atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -566,7 +618,9 @@
       "position": [
         4780,
         500
-      ]
+      ],
+      "notes": "Envia a resposta final do bot para o cliente no WhatsApp.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -584,7 +638,9 @@
       "position": [
         5020,
         500
-      ]
+      ],
+      "notes": "Registra no banco a mensagem enviada ao cliente e a intencao atendida.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -602,7 +658,9 @@
       "position": [
         4780,
         340
-      ]
+      ],
+      "notes": "Encerra a sessao atual limpando o estado salvo da conversa.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -615,7 +673,9 @@
       "position": [
         2140,
         540
-      ]
+      ],
+      "notes": "Identifica quando a mensagem contem imagem do boleto para ativar a extra??o documental.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -648,7 +708,9 @@
       "position": [
         2380,
         540
-      ]
+      ],
+      "notes": "Decide se a extra??o por imagem precisa ser executada antes da classificacao da mensagem.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -666,7 +728,9 @@
       "position": [
         2620,
         400
-      ]
+      ],
+      "notes": "Envia a imagem do boleto para o servico de OCR e IA local e tenta localizar o CPF ou CNPJ do pagador.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -699,7 +763,9 @@
       "position": [
         2860,
         400
-      ]
+      ],
+      "notes": "Verifica se a extracao por imagem encontrou um documento valido para continuar o atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -712,7 +778,9 @@
       "position": [
         3100,
         260
-      ]
+      ],
+      "notes": "Responde ao cliente quando a imagem nao permite identificar o documento com seguranca.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -725,7 +793,9 @@
       "position": [
         2860,
         620
-      ]
+      ],
+      "notes": "Ajusta o contexto da mensagem para a classificacao de intencao, inclusive quando o documento veio por imagem.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -738,7 +808,9 @@
       "position": [
         1900,
         420
-      ]
+      ],
+      "notes": "Identifica quando a mensagem e um primeiro contato generico e deve receber a saudacao com menu.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -771,7 +843,9 @@
       "position": [
         2140,
         420
-      ]
+      ],
+      "notes": "Decide se envia a mensagem de boas-vindas ou se segue direto para a interpretacao da intencao.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -784,7 +858,9 @@
       "position": [
         2380,
         280
-      ]
+      ],
+      "notes": "Monta a mensagem inicial da Nippon Elevadores com as opcoes do menu de atendimento.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -802,7 +878,9 @@
       "position": [
         2620,
         280
-      ]
+      ],
+      "notes": "Salva o estado aguardando a escolha do menu para continuar a conversa na proxima mensagem.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -835,7 +913,89 @@
       "position": [
         2860,
         540
-      ]
+      ],
+      "notes": "Repete o menu quando o cliente esta na etapa de escolha e envia uma mensagem invalida ou generica.",
+      "notesInFlow": true
+    },
+    {
+      "id": "5c0d782f-b984-448e-a7bb-9e9dfe0413be",
+      "name": "Nota Geral - Chatbot",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        120,
+        40
+      ],
+      "parameters": {
+        "content": "## Chatbot de Contas a Receber\n\nEste workflow atende clientes da Nippon Elevadores pelo WhatsApp.\n\n### O que ele faz\n- envia saudacao inicial com menu quando o primeiro contato e generico\n- permite que o cliente seja direto, sem depender do menu\n- trata segunda via de boleto\n- trata alteracao de vencimento\n- aceita CPF/CNPJ digitado ou foto do boleto\n- encaminha outros assuntos para operador humano\n\n### Resultado esperado\nAo final, o cliente recebe a resposta automatizada, o atendimento e registrado e a sessao e encerrada.",
+        "width": 860,
+        "height": 260,
+        "color": 7
+      }
+    },
+    {
+      "id": "7e992848-d45e-4c67-a204-329f17605776",
+      "name": "Nota - Entrada e Contexto",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        120
+      ],
+      "parameters": {
+        "content": "## Entrada e contexto\n\nEste bloco recebe a mensagem do WAHA, normaliza o payload, registra a interacao e recupera o estado atual da conversa para decidir a proxima etapa do atendimento.",
+        "width": 520,
+        "height": 220,
+        "color": 5
+      }
+    },
+    {
+      "id": "bf39ad6c-308c-4036-b5f9-c89b38588cc9",
+      "name": "Nota - Menu e Intencao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1860,
+        120
+      ],
+      "parameters": {
+        "content": "## Menu e interpretacao da intencao\n\nAqui o fluxo decide se deve enviar a mensagem de boas-vindas, repetir o menu ou seguir direto com a solicitacao do cliente.\n\nAs intencoes principais sao:\n- segunda via de boleto\n- alteracao de vencimento\n- encaminhamento para operador",
+        "width": 620,
+        "height": 260,
+        "color": 6
+      }
+    },
+    {
+      "id": "ca91c4a9-a479-42d0-a2c0-7c5078893945",
+      "name": "Nota - Documento e Imagem",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        840
+      ],
+      "parameters": {
+        "content": "## Documento e imagem do boleto\n\nQuando o cliente informa CPF/CNPJ digitado, o fluxo extrai o documento diretamente.\n\nQuando o cliente envia uma foto do boleto, o workflow chama o servico de OCR e IA local para localizar o CPF/CNPJ antes de continuar o atendimento.",
+        "width": 700,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "b5c29dec-8c65-4e1d-ab2b-684aed9f923f",
+      "name": "Nota - Validacao e Resposta",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3540,
+        960
+      ],
+      "parameters": {
+        "content": "## Validacao, atualizacao e encerramento\n\nDepois da identificacao do cliente, o workflow valida documento e telefone, localiza o boleto, atualiza o vencimento quando necessario, envia a resposta final no WhatsApp, registra o atendimento e limpa o estado da conversa.",
+        "width": 760,
+        "height": 280,
+        "color": 3
+      }
     }
   ],
   "connections": {
@@ -1339,7 +1499,22 @@
   "active": false,
   "settings": {},
   "versionId": "6984fa08-6611-4e0f-bf30-2fa8e861f901",
-  "meta": {},
+  "meta": {
+    "templateDescription": "Chatbot de contas a receber da Nippon Elevadores com atendimento inicial via WhatsApp, menu de boas-vindas, segunda via de boleto, alteracao de vencimento, envio de foto do boleto e fallback para operador humano."
+  },
   "pinData": {},
-  "tags": []
+  "tags": [
+    {
+      "name": "chatbot"
+    },
+    {
+      "name": "contas a receber"
+    },
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "nippon elevadores"
+    }
+  ]
 }
