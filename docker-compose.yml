@@ -24,7 +24,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       DEFAULT_DELAY_DAYS: 3
-      DAILY_RUN_TIME: 08:00
+      DAILY_RUN_TIME: "08:00"
       DEFAULT_FALLBACK_MESSAGE: Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.
       WAHA_API_KEY: ${WAHA_API_KEY}
       WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL}
@@ -84,8 +84,8 @@ services:
       N8N_RUNNERS_ENABLED: "true"
       GENERIC_TIMEZONE: America/Sao_Paulo
       WAHA_API_KEY: ${WAHA_API_KEY}
-      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY}
-      PERPLEXITY_MODEL: ${PERPLEXITY_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
     ports:
       - "5678:5678"
     volumes:
@@ -101,5 +101,10 @@ services:
       WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME}
       WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD}
       WHATSAPP_DEFAULT_ENGINE: NOWEB
+      WAHA_LOCAL_STORE_BASE_DIR: /app/.sessions
+      WHATSAPP_RESTART_ALL_SESSIONS: "True"
+      WAHA_AUTO_START_DELAY_SECONDS: 1
     ports:
       - "3001:3000"
+    volumes:
+      - ./waha_sessions:/app/.sessions

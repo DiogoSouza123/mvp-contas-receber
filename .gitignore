@@ -8,3 +8,19 @@ coverage/
 knowledge-base/source/
 knowledge-base/index/
 tmp-*.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# WAHA local WhatsApp sessions - contains auth/session data
+waha_sessions/
+waha_sessions_failed_*/
+
+# Local backups and temporary exports
+*.bak
+*.backup
+*.old
+*.tmp
+docker-compose.before-*.yml
+docker-compose.*.backup.yml

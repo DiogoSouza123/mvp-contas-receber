@@ -214,13 +214,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.perplexity.ai/chat/completions",
+        "url": "https://api.openai.com/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.PERPLEXITY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -230,7 +230,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $env.PERPLEXITY_MODEL || 'sonar', temperature: 0, messages: [ { role: 'system', content: 'Classifique mensagens de clientes de contas a receber. Responda somente JSON valido com o formato {\"intent\":\"ask_document|segunda_via_boleto|default_operator\",\"reason\":\"texto curto\"}. Use ask_document quando o cliente estiver falando de boleto, vencimento, segunda via, reenvio, pagamento ou contas a receber e ainda nao informou CPF/CNPJ de 11 ou 14 digitos. Use segunda_via_boleto somente quando a intencao estiver ligada a perda, esquecimento, reenvio ou localizacao de boleto e o documento ja estiver presente. Use default_operator para qualquer outro caso.' }, { role: 'user', content: 'Mensagem: ' + ($json.text || 'nao informada') + '\\nDocumento identificado: ' + ($json.document || 'nao') + '\\nOrigem do documento: ' + ($json.documentSource || 'texto') } ], web_search_options: { disable_search: true } }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $env.OPENAI_MODEL || 'gpt-4o-mini', temperature: 0, messages: [ { role: 'system', content: 'Classifique mensagens de clientes de contas a receber. Responda somente JSON valido com o formato {\"intent\":\"ask_document|segunda_via_boleto|default_operator\",\"reason\":\"texto curto\"}. Use ask_document quando o cliente estiver falando de boleto, vencimento, segunda via, reenvio, pagamento ou contas a receber e ainda nao informou CPF/CNPJ de 11 ou 14 digitos. Use segunda_via_boleto somente quando a intencao estiver ligada a perda, esquecimento, reenvio ou localizacao de boleto e o documento ja estiver presente. Use default_operator para qualquer outro caso.' }, { role: 'user', content: 'Mensagem: ' + ($json.text || 'nao informada') + '\\nDocumento identificado: ' + ($json.document || 'nao') + '\\nOrigem do documento: ' + ($json.documentSource || 'texto') } ] }) }}",
         "options": {}
       },
       "id": "af6bf019-44d3-4f01-8d13-7448fe4d6007",
