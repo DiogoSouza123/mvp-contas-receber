@@ -1,0 +1,84 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="MVP Database ERD" id="_n3Qtavwpzh9nj6gEqfk">
+    <mxGraphModel dx="4108" dy="2206" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-87" parent="1" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;" value="Diagrama da Base de Dados (PostgreSQL)" vertex="1">
+          <mxGeometry height="40" width="980" x="1158.8571428571431" y="244.00000000000023" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-88" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=18;fontFamily=Consolas;strokeColor=#999999;fillColor=#f5f5f5;" value="Legenda&#xa;PK = Chave Primaria&#xa;FK = Chave Estrangeira&#xa;UQ = Unico&#xa;Linhas azuis = Relacionamentos (N:1)" vertex="1">
+          <mxGeometry height="140" width="410" x="350" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-89" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=18;fontStyle=1;strokeColor=#F0B27A;fillColor=#FFF9F0;dashed=1;" value="Comunicacao e Atendimento" vertex="1">
+          <mxGeometry height="1040" width="540" x="338.8571428571431" y="304.0000000000002" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-90" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=13;fontStyle=1;strokeColor=#7EA6E0;fillColor=#F5F9FF;dashed=1;" value="Core Financeiro" vertex="1">
+          <mxGeometry height="1530" width="2241.14" x="930" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-91" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=18;fontStyle=1;strokeColor=#9CCC65;fillColor=#F6FBF1;dashed=1;" value="Configuracao" vertex="1">
+          <mxGeometry height="220" width="540" x="338.8571428571431" y="1384.0000000000002" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-92" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#D79B00;fillColor=#FFF2CC;" value="contatos&#xa;PK id BIGSERIAL&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id&#xa;nome TEXT&#xa;email TEXT NULL&#xa;telefone TEXT&#xa;padrao BOOLEAN&#xa;whatsapp_opt_out BOOLEAN&#xa;whatsapp_opt_out_at TIMESTAMPTZ NULL&#xa;whatsapp_opt_out_reason TEXT&#xa;created_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="250" width="460" x="380" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-93" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#D79B00;fillColor=#FFF2CC;" value="atendimentos_chat&#xa;PK id BIGSERIAL&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id (NULL)&#xa;telefone TEXT&#xa;documento_informado TEXT NULL&#xa;role TEXT&#xa;message TEXT&#xa;intent TEXT NULL&#xa;channel TEXT&#xa;metadata JSONB&#xa;created_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="250" width="460" x="380" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-94" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#D79B00;fillColor=#FFF2CC;" value="chatbot_conversation_state&#xa;PK telefone TEXT&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id (NULL)&#xa;current_state TEXT&#xa;active_flow TEXT&#xa;last_intent TEXT&#xa;context JSONB&#xa;expires_at TIMESTAMPTZ NULL&#xa;created_at TIMESTAMPTZ&#xa;updated_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="260" width="460" x="380" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-95" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=18;fontFamily=Consolas;strokeColor=#82B366;fillColor=#D5E8D4;" value="parametros_mvp&#xa;PK chave TEXT&#xa;valor TEXT&#xa;descricao TEXT" vertex="1">
+          <mxGeometry height="120" width="460" x="378.8571428571431" y="1444.0000000000002" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-96" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#1A3B5D;fillColor=#EAF3FF;" value="clientes&#xa;PK id BIGINT&#xa;tenant_id INTEGER&#xa;nome TEXT&#xa;nome_fantasia TEXT&#xa;pessoa_tipo INTEGER&#xa;cpf_cnpj TEXT (UQ)&#xa;ativo BOOLEAN&#xa;created_at TIMESTAMPTZ&#xa;updated_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="250" width="360" x="1060" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-97" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#1A3B5D;fillColor=#EAF3FF;" value="contas_receber&#xa;PK id BIGINT&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id&#xa;tenant_id INTEGER&#xa;situacao TEXT&#xa;situacao_id INTEGER&#xa;tipo_operacao TEXT&#xa;id_operacao TEXT&#xa;documento TEXT&#xa;data_hora_cadastro TIMESTAMPTZ&#xa;data_hora_manutencao TIMESTAMPTZ&#xa;historico TEXT&#xa;forma_pagamento TEXT&#xa;total_parcelas TEXT&#xa;numero_parcela INTEGER&#xa;subtotal NUMERIC(12,2)&#xa;desconto_total NUMERIC(12,2)&#xa;juros_total NUMERIC(12,2)&#xa;multa_total NUMERIC(12,2)&#xa;total NUMERIC(12,2)&#xa;data_vencimento DATE&#xa;valor_pago NUMERIC(12,2)&#xa;data_pagamento DATE NULL&#xa;imposto_retido NUMERIC(12,2)" vertex="1">
+          <mxGeometry height="620" width="500" x="1530" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-98" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#1A3B5D;fillColor=#EAF3FF;" value="boletos&#xa;PK id BIGINT&#xa;FK conta_receber_id BIGINT -&amp;gt; contas_receber.id&#xa;tenant_id INTEGER&#xa;cprf TEXT&#xa;vencimento DATE&#xa;valor NUMERIC(12,2)&#xa;nosso_numero TEXT&#xa;linha_digitavel TEXT&#xa;binario TEXT&#xa;whatsapp_status BOOLEAN NULL&#xa;whatsapp_message TEXT NULL&#xa;created_at TIMESTAMPTZ&#xa;updated_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="300" width="500" x="2590" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-99" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#1A3B5D;fillColor=#EAF3FF;" value="cobrancas_whatsapp&#xa;PK id BIGSERIAL&#xa;FK boleto_id BIGINT -&amp;gt; boletos.id&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id&#xa;tenant_id INTEGER&#xa;telefone TEXT&#xa;status BOOLEAN&#xa;message TEXT&#xa;sent_text TEXT&#xa;category TEXT&#xa;policy_type TEXT&#xa;dedupe_key TEXT&#xa;direction TEXT&#xa;channel TEXT&#xa;metadata JSONB&#xa;created_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="420" width="500" x="2590" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-100" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fontSize=17;fontFamily=Consolas;strokeColor=#1A3B5D;fillColor=#EAF3FF;" value="alteracoes_vencimento&#xa;PK id BIGSERIAL&#xa;FK boleto_id BIGINT -&amp;gt; boletos.id&#xa;FK cliente_id BIGINT -&amp;gt; clientes.id&#xa;tenant_id INTEGER&#xa;requested_document TEXT&#xa;requested_phone TEXT&#xa;previous_due_date DATE&#xa;new_due_date DATE&#xa;reason TEXT&#xa;channel TEXT&#xa;requested_by TEXT&#xa;status TEXT&#xa;created_at TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="360" width="500" x="2050" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-101" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-102" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=0;exitY=0.45;exitDx=0;exitDy=0;entryX=1;entryY=0.55;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-103" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-98" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=0;exitY=0.45;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-97" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-104" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-99" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-98" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-105" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-99" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=0;exitY=0.52;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1520" y="1308" />
+              <mxPoint x="1520" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-106" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-93" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1 opcional">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-107" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-98" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-108" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.989;entryY=0.681;entryDx=0;entryDy=0;entryPerimeter=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yxpzd90B18emgGJ4LFmf-109" edge="1" parent="1" source="Yxpzd90B18emgGJ4LFmf-94" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#0B5394;strokeWidth=1.4;endArrow=ERone;startArrow=ERmany;startFill=1;endFill=1;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.95;entryDx=0;entryDy=0;" target="Yxpzd90B18emgGJ4LFmf-96" value="N:1 opcional">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
