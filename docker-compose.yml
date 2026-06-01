@@ -36,6 +36,20 @@ services:
     ports:
       - "3000:3000"
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mvp-frontend
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      APP_TENANT_ID: ${APP_TENANT_ID:-1}
+    ports:
+      - "3002:3000"
+
   doc-extractor:
     build:
       context: ./doc-extractor

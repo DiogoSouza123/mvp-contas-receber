@@ -5,6 +5,7 @@ Projeto local em Docker para validar um MVP de contas a receber com API fake, Po
 ## Componentes
 
 - `api`: mock do ERP e endpoints auxiliares do MVP em Node.js.
+- `frontend`: painel web gerencial (Next.js) com indicadores, tabela consolidada e chat com LLM.
 - `postgres`: banco local com schema, seed e dados persistidos em `postgres_data`.
 - `n8n`: orquestracao dos fluxos, persistido em `n8n_data`.
 - `waha`: integracao local com WhatsApp, persistida em `waha_sessions`.
@@ -18,6 +19,7 @@ Projeto local em Docker para validar um MVP de contas a receber com API fake, Po
 - `.env.example`: modelo de variaveis.
 - `configure-waha-webhook.sh`: configura o WAHA para enviar eventos de mensagem ao n8n.
 - `api/`: aplicacao Node.js.
+- `frontend/`: aplicacao Next.js para dashboard de inadimplencia e cobrancas.
 - `db/init/`: schema e seed inicial do PostgreSQL.
 - `n8n-workflows/`: workflows exportados para referencia/importacao.
 - `n8n_data/`, `postgres_data/`, `waha_sessions/`: dados locais persistidos.
@@ -48,11 +50,31 @@ docker ps
 URLs esperadas:
 
 - API: `http://localhost:3000`
+- Frontend: `http://localhost:3002`
 - WAHA: `http://localhost:3001`
 - n8n: `http://localhost:5678`
 - doc-extractor: `http://localhost:8010`
 - knowledge-base: `http://localhost:8011`
 - Postgres: `localhost:5432`
+
+## Frontend Gerencial
+
+O frontend foi criado em `frontend/` com Next.js e tema vermelho/preto.
+
+Principais pontos:
+
+- Consulta o PostgreSQL diretamente (sem criar novos endpoints na API).
+- Mostra indicadores basicos de inadimplencia e cobranca.
+- Exibe tabela consolidada com dados de `contas_receber`, `clientes`, `boletos` e `cobrancas_whatsapp`.
+- Inclui chat gerencial com LLM para perguntas em linguagem natural; a LLM gera SQL de leitura e devolve resposta textual.
+- Placeholder de logo em `frontend/public/nippon-logo-placeholder.png`.
+
+Variaveis usadas no frontend via `docker-compose.yml`:
+
+- `DATABASE_URL`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `APP_TENANT_ID`
 
 ## WAHA e n8n
 
@@ -173,6 +195,12 @@ Ver logs da API:
 
 ```powershell
 docker logs mvp-api --tail 100
+```
+
+Ver logs do Frontend:
+
+```powershell
+docker logs mvp-frontend --tail 100
 ```
 
 Ver status da sessao WAHA:
@@ -298,7 +326,7 @@ docker ps
 As portas usadas por este projeto sao:
 
 ```text
-3000, 3001, 5432, 5678, 8010, 8011
+3000, 3001, 3002, 5432, 5678, 8010, 8011
 ```
 
 ### n8n nao abre

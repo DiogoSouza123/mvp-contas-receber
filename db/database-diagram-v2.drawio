@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net" modified="2026-06-01T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="mvp-db-er-v2" name="MVP Database ERD v2">
+    <mxGraphModel dx="1880" dy="1160" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="MVP Cobranca + Chatbot - Database ERD&#xa;Fonte principal: db/init/01-schema.sql" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=20;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Legenda: PK = chave primaria, FK = chave estrangeira, 1:N = um para muitos" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=12;fontColor=#666666;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="78" width="700" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="section_customer" value="Cadastro e relacionamento do cliente" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#666666;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="section_finance" value="Fluxo financeiro principal" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#666666;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="460" y="110" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="section_events" value="Mensageria e eventos de cobranca" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#666666;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="110" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="section_config" value="Configuracao global" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#666666;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="460" y="1010" width="220" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="clientes" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;clientes&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGINT&lt;br&gt;tenant_id INTEGER&lt;br&gt;nome TEXT&lt;br&gt;nome_fantasia TEXT&lt;br&gt;pessoa_tipo INTEGER&lt;br&gt;cpf_cnpj TEXT UNIQUE&lt;br&gt;ativo BOOLEAN&lt;br&gt;created_at TIMESTAMPTZ&lt;br&gt;updated_at TIMESTAMPTZ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="300" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="contatos" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;contatos&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGSERIAL&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id&lt;br&gt;nome TEXT&lt;br&gt;email TEXT&lt;br&gt;telefone TEXT&lt;br&gt;padrao BOOLEAN&lt;br&gt;whatsapp_opt_out BOOLEAN&lt;br&gt;whatsapp_opt_out_at TIMESTAMPTZ&lt;br&gt;whatsapp_opt_out_reason TEXT&lt;br&gt;created_at TIMESTAMPTZ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="320" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="atendimentos_chat" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;atendimentos_chat&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGSERIAL&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id (nullable)&lt;br&gt;telefone TEXT&lt;br&gt;documento_informado TEXT&lt;br&gt;role TEXT&lt;br&gt;message TEXT&lt;br&gt;intent TEXT&lt;br&gt;channel TEXT&lt;br&gt;metadata JSONB&lt;br&gt;created_at TIMESTAMPTZ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="150" width="320" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="contas_receber" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;contas_receber&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGINT&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id&lt;br&gt;tenant_id INTEGER&lt;br&gt;situacao TEXT&lt;br&gt;situacao_id INTEGER&lt;br&gt;tipo_operacao TEXT&lt;br&gt;id_operacao TEXT&lt;br&gt;documento TEXT&lt;br&gt;data_hora_cadastro TIMESTAMPTZ&lt;br&gt;data_hora_manutencao TIMESTAMPTZ&lt;br&gt;historico TEXT&lt;br&gt;forma_pagamento TEXT&lt;br&gt;total_parcelas TEXT&lt;br&gt;numero_parcela INTEGER&lt;br&gt;subtotal NUMERIC(12,2)&lt;br&gt;desconto_total NUMERIC(12,2)&lt;br&gt;juros_total NUMERIC(12,2)&lt;br&gt;multa_total NUMERIC(12,2)&lt;br&gt;total NUMERIC(12,2)&lt;br&gt;data_vencimento DATE&lt;br&gt;valor_pago NUMERIC(12,2)&lt;br&gt;data_pagamento DATE&lt;br&gt;imposto_retido NUMERIC(12,2)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="470" width="340" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="boletos" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;boletos&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGINT&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; conta_receber_id -&amp;gt; contas_receber.id&lt;br&gt;tenant_id INTEGER&lt;br&gt;cprf TEXT&lt;br&gt;vencimento DATE&lt;br&gt;valor NUMERIC(12,2)&lt;br&gt;nosso_numero TEXT&lt;br&gt;linha_digitavel TEXT&lt;br&gt;binario TEXT&lt;br&gt;whatsapp_status BOOLEAN&lt;br&gt;whatsapp_message TEXT&lt;br&gt;created_at TIMESTAMPTZ&lt;br&gt;updated_at TIMESTAMPTZ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="860" y="470" width="320" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="cobrancas_whatsapp" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;cobrancas_whatsapp&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGSERIAL&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; boleto_id -&amp;gt; boletos.id&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id&lt;br&gt;tenant_id INTEGER&lt;br&gt;telefone TEXT&lt;br&gt;status BOOLEAN&lt;br&gt;message TEXT&lt;br&gt;sent_text TEXT&lt;br&gt;category TEXT&lt;br&gt;policy_type TEXT&lt;br&gt;dedupe_key TEXT&lt;br&gt;direction TEXT&lt;br&gt;channel TEXT&lt;br&gt;metadata JSONB&lt;br&gt;created_at TIMESTAMPTZ&lt;br&gt;&lt;i&gt;idx: telefone, created_at DESC&lt;/i&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="150" width="350" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="alteracoes_vencimento" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;alteracoes_vencimento&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; id BIGSERIAL&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; boleto_id -&amp;gt; boletos.id&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id&lt;br&gt;tenant_id INTEGER&lt;br&gt;requested_document TEXT&lt;br&gt;requested_phone TEXT&lt;br&gt;previous_due_date DATE&lt;br&gt;new_due_date DATE&lt;br&gt;reason TEXT&lt;br&gt;channel TEXT&lt;br&gt;requested_by TEXT&lt;br&gt;status TEXT&lt;br&gt;created_at TIMESTAMPTZ&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="620" width="350" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="chatbot_conversation_state" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;chatbot_conversation_state&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; telefone TEXT&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; cliente_id -&amp;gt; clientes.id (nullable)&lt;br&gt;current_state TEXT&lt;br&gt;active_flow TEXT&lt;br&gt;last_intent TEXT&lt;br&gt;context JSONB&lt;br&gt;expires_at TIMESTAMPTZ&lt;br&gt;created_at TIMESTAMPTZ&lt;br&gt;updated_at TIMESTAMPTZ&lt;br&gt;&lt;i&gt;idx: expires_at&lt;/i&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="860" y="850" width="320" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="parametros_mvp" value="&lt;div style=&quot;font-size:16px&quot;&gt;&lt;b&gt;parametros_mvp&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div align=&quot;left&quot;&gt;&lt;b&gt;PK&lt;/b&gt; chave TEXT&lt;br&gt;valor TEXT&lt;br&gt;descricao TEXT&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#808080;align=center;verticalAlign=top;spacing=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="1040" width="320" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_contatos" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="contatos">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_contas" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="contas_receber">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_contas_boletos" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="contas_receber" target="boletos">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_boletos_cobrancas" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="boletos" target="cobrancas_whatsapp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_cobrancas" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="cobrancas_whatsapp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_boletos_alteracoes" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="boletos" target="alteracoes_vencimento">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_alteracoes" value="1 : N" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="alteracoes_vencimento">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_atendimentos" value="1 : N (FK opcional no atendimento)" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="atendimentos_chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clientes_state" value="1 : N (FK opcional no estado)" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;exitPerimeter=1;entryPerimeter=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="clientes" target="chatbot_conversation_state">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
