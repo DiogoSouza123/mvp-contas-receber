@@ -241,6 +241,11 @@ body {
   vertical-align: top;
 }
 
+.table th:last-child,
+.table td:last-child {
+  width: 56px;
+}
+
 .table tbody tr:hover {
   background: rgba(230, 0, 18, 0.05);
 }
@@ -253,6 +258,67 @@ body {
 .cell-stack span {
   color: #626262;
   font-size: 0.8rem;
+}
+
+.actions-cell {
+  position: relative;
+  text-align: right;
+}
+
+.row-actions {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+}
+
+.icon-menu-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e3e3e3;
+  border-radius: 999px;
+  background: #fff;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-menu-button:hover,
+.icon-menu-button[aria-expanded="true"] {
+  border-color: rgba(230, 0, 18, 0.35);
+  background: rgba(230, 0, 18, 0.06);
+  color: var(--red-strong);
+}
+
+.row-actions-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 20;
+  min-width: 178px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.row-actions-menu button {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  color: #222;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.row-actions-menu button:hover {
+  background: rgba(230, 0, 18, 0.06);
+  color: var(--red-strong);
 }
 
 .status-pill {
@@ -277,6 +343,104 @@ body {
 .status-paid {
   background: rgba(15, 140, 74, 0.12);
   color: #0f8c4a;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(18, 18, 18, 0.46);
+}
+
+.detail-modal {
+  width: min(760px, 100%);
+  max-height: min(720px, calc(100vh - 2rem));
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.detail-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--surface-border);
+  background: linear-gradient(180deg, #ffffff, #fafafa);
+}
+
+.detail-modal-kicker {
+  margin: 0;
+  color: var(--red);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.detail-modal h3 {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-title), sans-serif;
+  font-size: 1.25rem;
+}
+
+.modal-close-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e2e2;
+  border-radius: 999px;
+  background: #fff;
+  color: #222;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modal-close-button:hover {
+  border-color: rgba(230, 0, 18, 0.35);
+  color: var(--red-strong);
+  background: rgba(230, 0, 18, 0.06);
+}
+
+.detail-grid {
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-item {
+  min-width: 0;
+  border: 1px solid #eeeeee;
+  border-radius: 10px;
+  background: #fbfbfb;
+  padding: 0.7rem;
+}
+
+.detail-item dt {
+  margin: 0;
+  color: #666;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-item dd {
+  margin: 0.3rem 0 0;
+  color: #1f2937;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .sr-only {
@@ -496,6 +660,10 @@ body {
 
   .hero-title {
     font-size: 1.45rem;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .chat-widget {
