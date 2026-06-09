@@ -29,7 +29,7 @@ export function ReceivablesTable({ rows }: ReceivablesTableProps) {
   return (
     <section className="panel">
       <header className="panel-header">
-        <h2 className="panel-title">Consolidado de Inadimplencia e Cobrancas</h2>
+        <h2 className="panel-title">Consolidado de Inadimplência e Cobranças</h2>
         <p className="panel-subtitle">{rows.length} registro(s) exibido(s)</p>
       </header>
       <div className="table-shell">
@@ -63,7 +63,7 @@ export function ReceivablesTable({ rows }: ReceivablesTableProps) {
                 <td>
                   <div className="cell-stack">
                     <strong>{row.documento || "-"}</strong>
-                    <span>{row.nossoNumero || "Nosso numero indisponivel"}</span>
+                    <span>{row.nossoNumero || "Nosso número indisponível"}</span>
                   </div>
                 </td>
                 <td>
@@ -83,7 +83,7 @@ export function ReceivablesTable({ rows }: ReceivablesTableProps) {
                     <strong>{row.tentativasCobranca} tentativa(s)</strong>
                     <span>
                       {row.ultimoEnvio
-                        ? `${row.envioSucesso ? "Ultimo envio com sucesso" : "Ultimo envio sem sucesso"} em ${formatDate(
+                        ? `${row.envioSucesso ? "Último envio com sucesso" : "Último envio sem sucesso"} em ${formatDate(
                             row.ultimoEnvio
                           )}`
                         : "Sem envios registrados"}

@@ -5,7 +5,7 @@ let cachedPool: Pool | null = null;
 function createPool() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL nao configurada para o frontend.");
+    throw new Error("DATABASE_URL não configurada para o frontend.");
   }
 
   return new Pool({

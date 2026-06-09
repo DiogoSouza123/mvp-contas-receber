@@ -48,10 +48,10 @@ export default async function Home({ searchParams }: PageProps) {
               />
             </div>
             <div>
-              <p className="hero-kicker">Nippon | Operacoes Financeiras</p>
-              <h1 className="hero-title">Painel Gerencial de Inadimplencia e Cobrancas</h1>
+              <p className="hero-kicker">Nippon | Operações Financeiras</p>
+              <h1 className="hero-title">Painel Gerencial de Inadimplência e Cobranças</h1>
               <p className="hero-subtitle">
-                Visao consolidada com dados diretos do PostgreSQL e apoio de LLM para analises em
+                Visão consolidada com dados diretos do PostgreSQL e apoio de LLM para análises em
                 linguagem natural.
               </p>
             </div>
@@ -81,7 +81,7 @@ export default async function Home({ searchParams }: PageProps) {
                 id="search"
                 name="search"
                 type="text"
-                placeholder="Cliente, CPF/CNPJ, documento, nosso numero"
+                placeholder="Cliente, CPF/CNPJ, documento, nosso número"
                 defaultValue={filters.search}
               />
             </div>
@@ -99,23 +99,23 @@ export default async function Home({ searchParams }: PageProps) {
           <MetricCard
             label="Valor em aberto"
             value={formatCurrency(snapshot.kpis.valorEmAberto)}
-            helper={`${snapshot.kpis.titulosEmAberto} titulo(s) em aberto`}
+            helper={`${snapshot.kpis.titulosEmAberto} título(s) em aberto`}
           />
           <MetricCard
             label="Valor vencido"
             value={formatCurrency(snapshot.kpis.valorVencido)}
-            helper={`${snapshot.kpis.titulosVencidos} titulo(s) vencido(s)`}
+            helper={`${snapshot.kpis.titulosVencidos} título(s) vencido(s)`}
             danger
           />
           <MetricCard
-            label="Taxa de inadimplencia"
+            label="Taxa de inadimplência"
             value={formatPercent(snapshot.kpis.taxaInadimplencia)}
-            helper="Titulos vencidos / titulos em aberto"
+            helper="Títulos vencidos / títulos em aberto"
           />
           <MetricCard
-            label="Recebido no periodo"
+            label="Recebido no período"
             value={formatCurrency(snapshot.kpis.valorRecebido)}
-            helper={`${snapshot.kpis.totalTitulos} titulo(s) analisado(s)`}
+            helper={`${snapshot.kpis.totalTitulos} título(s) analisado(s)`}
           />
           <MetricCard
             label="Envios WhatsApp"
@@ -136,7 +136,7 @@ export default async function Home({ searchParams }: PageProps) {
           <h1 className="panel-title">Falha ao carregar dashboard</h1>
           <p className="panel-subtitle">{message}</p>
           <p className="panel-subtitle">
-            Verifique `DATABASE_URL` no container do frontend e se o Postgres esta ativo.
+            Verifique `DATABASE_URL` no container do frontend e se o Postgres está ativo.
           </p>
         </section>
       </main>

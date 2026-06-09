@@ -27,7 +27,7 @@ const assistantGreeting: ChatMessage = {
   id: "greeting",
   role: "assistant",
   content:
-    "Sou o assistente gerencial. Pergunte sobre inadimplencia, performance de cobranca, clientes em risco, taxa de sucesso de WhatsApp e tendencias de vencimento."
+    "Sou o assistente gerencial. Pergunte sobre inadimplência, performance de cobrança, clientes em risco, taxa de sucesso de WhatsApp e tendências de vencimento."
 };
 
 const initialChatState: ChatState = {
@@ -62,7 +62,7 @@ export function ManagerChat() {
     const assistantMessage: ChatMessage = {
       id: `a-${state.requestId}`,
       role: "assistant",
-      content: state.ok ? state.answer : state.error || "Nao foi possivel responder agora.",
+      content: state.ok ? state.answer : state.error || "Não foi possível responder agora.",
       sql: state.ok ? state.sql : undefined,
       rowsCount: state.ok ? state.rowsCount : undefined,
       error: !state.ok
@@ -81,7 +81,7 @@ export function ManagerChat() {
       <header className="panel-header">
         <h2 className="panel-title">Chat Gerencial com LLM</h2>
         <p className="panel-subtitle">
-          Perguntas em linguagem natural. A resposta e baseada em SQL de leitura no banco.
+          Perguntas em linguagem natural. A resposta é baseada em SQL de leitura no banco.
         </p>
       </header>
 
@@ -108,7 +108,7 @@ export function ManagerChat() {
           id="question"
           name="question"
           ref={textareaRef}
-          placeholder="Ex.: Quais clientes concentram o maior valor vencido no periodo?"
+          placeholder="Ex.: Quais clientes concentram o maior valor vencido no período?"
           required
           minLength={4}
           maxLength={500}

@@ -15,8 +15,8 @@ const titleFont = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: "Nippon | Painel de Cobranca",
-  description: "Dashboard gerencial de inadimplencia e cobrancas."
+  title: "Nippon | Painel de Cobrança",
+  description: "Dashboard gerencial de inadimplência e cobranças."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

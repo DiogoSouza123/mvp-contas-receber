@@ -2,7 +2,7 @@
   "name": "mvp-recebiveis-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "Painel gerencial de inadimplencia e cobranca",
+  "description": "Painel gerencial de inadimplência e cobrança",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
