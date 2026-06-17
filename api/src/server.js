@@ -410,6 +410,7 @@ app.get(`${basePath}/GetContasReceberByVencimento`, async (req, res, next) => {
         FROM contas_receber cr
         INNER JOIN clientes c ON c.id = cr.cliente_id
         WHERE cr.data_vencimento BETWEEN $1::date AND $2::date
+          AND cr.situacao = 'EmAberto'
         ORDER BY cr.data_vencimento ASC
       `,
       [DataInicial, DataFinal]
@@ -1168,6 +1169,7 @@ app.post(`${basePath}/CheckWhatsAppPolicy`, async (req, res, next) => {
       Telefone,
       Message,
       PolicyType = 'campaign',
+      PassThrough = {},
     } = req.body || {};
 
     if (!Telefone || !Message) {
@@ -1189,6 +1191,7 @@ app.post(`${basePath}/CheckWhatsAppPolicy`, async (req, res, next) => {
       ReasonCode: decision.reasonCode,
       ReasonMessage: decision.reasonMessage,
       DedupeKey: decision.dedupeKey,
+      ...PassThrough,
       Policy: {
         WindowStart: decision.policy.windowStart,
         WindowEnd: decision.policy.windowEnd,

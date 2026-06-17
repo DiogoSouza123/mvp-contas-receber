@@ -90,7 +90,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const settings = $item(0).$node[\"Build Date Window\"].json;\nconst accounts = $json.Dados || [];\nreturn accounts.map((entry) => ({\n  json: {\n    key: settings.key,\n    tenantId: settings.tenantId,\n    initialMessage: settings.initialMessage,\n    contaId: entry.Conta.Id,\n    clienteId: entry.Pagador.Id,\n    clienteNome: entry.Pagador.Nome,\n    cprf: entry.Pagador.Cnpj || entry.Pagador.Cpf,\n    vencimento: entry.Conta.DataVencimento,\n    total: entry.Conta.Total,\n    historico: entry.Conta.Historico,\n    documento: entry.Conta.Documento\n  }\n}));"
+        "jsCode": "const settings = $item(0).$node[\"Build Date Window\"].json;\nconst accounts = ($json.Dados || []).filter((entry) => entry.Conta?.Situacao === 'EmAberto');\nreturn accounts.map((entry) => ({\n  json: {\n    key: settings.key,\n    tenantId: settings.tenantId,\n    initialMessage: settings.initialMessage,\n    contaId: entry.Conta.Id,\n    clienteId: entry.Pagador.Id,\n    clienteNome: entry.Pagador.Nome,\n    cprf: entry.Pagador.Cnpj || entry.Pagador.Cpf,\n    vencimento: entry.Conta.DataVencimento,\n    total: entry.Conta.Total,\n    historico: entry.Conta.Historico,\n    documento: entry.Conta.Documento,\n    situacao: entry.Conta.Situacao\n  }\n}));"
       },
       "id": "f1dcb06f-e8cb-4ac2-92dd-57cb27c47005",
       "name": "Expand Overdue Accounts",
@@ -163,7 +163,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const account = $item(0).$node[\"Expand Overdue Accounts\"].json;\nconst contactsResponse = $item(0).$node[\"Get Client Contacts\"].json;\nconst contacts = contactsResponse.Contatos || [];\nconst defaultContact = contacts[0];\nconst phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\nif (!phone) {\n  return [];\n}\nconst boletos = $json.Boletos || [];\nconst boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\nif (!boleto) {\n  return [];\n}\nconst amount = Number(account.total || 0).toFixed(2).replace('.', ',');\nconst chatId = phone.includes('@') ? phone : `${phone}@c.us`;\nconst text = `${account.initialMessage}\\nCliente: ${account.clienteNome}\\nDocumento: ${account.documento}\\nVencimento: ${account.vencimento}\\nValor: R$ ${amount}\\nLinha digitavel: ${boleto.LinhaDigitavel}`;\nreturn [\n  {\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text\n    }\n  }\n];"
+        "jsCode": "const boletoItems = $input.all();\nconst accountItems = $items('Expand Overdue Accounts');\nconst contactItems = $items('Get Client Contacts');\nconst charges = [];\n\nfor (let index = 0; index < boletoItems.length; index += 1) {\n  const account = accountItems[index]?.json;\n  const contactsResponse = contactItems[index]?.json || {};\n  if (!account) continue;\n\n  const contacts = contactsResponse.Contatos || [];\n  const defaultContact = contacts[0];\n  const phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\n  if (!phone) continue;\n\n  const boletos = boletoItems[index].json.Boletos || [];\n  const boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\n  if (!boleto) continue;\n\n  const amount = Number(account.total || 0).toFixed(2).replace('.', ',');\n  const chatId = phone.includes('@') ? phone : phone + '@c.us';\n  const text = account.initialMessage + '\\nCliente: ' + account.clienteNome + '\\nDocumento: ' + account.documento + '\\nVencimento: ' + account.vencimento + '\\nValor: R$ ' + amount + '\\nLinha digitavel: ' + boleto.LinhaDigitavel;\n\n  charges.push({\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text,\n    },\n    pairedItem: { item: index },\n  });\n}\n\nreturn charges;"
       },
       "id": "b34c31a0-1fd4-4eff-b8fd-bd45f6db5008",
       "name": "Prepare WhatsApp Charge",
@@ -182,7 +182,7 @@
         "url": "http://api:3000/Liftflex_API/rest/v2/CheckWhatsAppPolicy",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.text, PolicyType: 'campaign' }) }}",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.text, PolicyType: 'campaign', PassThrough: $json }) }}",
         "options": {}
       },
       "id": "4ec94f94-cdc2-4431-922e-a80e3d391008",
@@ -283,7 +283,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Prepare WhatsApp Charge\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $node[\"Check Send Policy\"].json.ReasonCode } }) }}",
+        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Prepare WhatsApp Charge\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
         "options": {}
       },
       "id": "8a365ef5-97b8-4c8d-8b82-81d23849f010",
