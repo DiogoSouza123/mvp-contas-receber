@@ -299,7 +299,9 @@ def generate_answer(question: str, chunks: list[dict[str, Any]]) -> str:
                         "Voce responde perguntas institucionais da Nippon Elevadores "
                         "usando somente o contexto fornecido. Responda em portugues "
                         "do Brasil, de forma direta, objetiva e curta, com no maximo "
-                        "2 frases. Se o contexto nao responder a pergunta com "
+                        "2 frases. Quando a pergunta pedir numero, contato ou telefone "
+                        "da empresa, use o telefone do contexto se ele estiver presente. "
+                        "Se o contexto nao responder a pergunta com "
                         "seguranca, responda exatamente: SEM_RESPOSTA"
                     ),
                 },
