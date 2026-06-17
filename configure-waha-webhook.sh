@@ -8,7 +8,7 @@ set -eu
 PROJECT_NAME="${1:-${PROJECT_NAME:-mvp}}"
 WAHA_CONTAINER="${WAHA_CONTAINER:-${PROJECT_NAME}-waha}"
 WAHA_API_KEY="${WAHA_API_KEY:-changeme}"
-WAHA_WEBHOOK_URL="${WAHA_WEBHOOK_URL:-http://n8n:5678/webhook/waha-contas-receber}"
+WAHA_WEBHOOK_URL="${WAHA_WEBHOOK_URL:-http://n8n:5678/webhook/waha-contas-receber-v2}"
 
 docker exec \
   -e WAHA_API_KEY="$WAHA_API_KEY" \

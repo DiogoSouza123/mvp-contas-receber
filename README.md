@@ -84,7 +84,7 @@ Depois de subir os containers, abra o dashboard do WAHA:
 http://localhost:3001/dashboard
 ```
 
-Faça login com as credenciais do `.env`, inicie a sessao `default` e escaneie o QR Code.
+Faca login com as credenciais do `.env`, inicie a sessao `default` e escaneie o QR Code.
 
 Quando a sessao estiver como `WORKING`, rode o script abaixo na raiz do projeto:
 
@@ -99,7 +99,7 @@ O script configura:
 ```text
 Sessao: default
 Evento: message
-Webhook: http://n8n:5678/webhook/waha-contas-receber
+Webhook: http://n8n:5678/webhook/waha-contas-receber-v2
 ```
 
 Para conferir se ficou configurado:
@@ -114,7 +114,7 @@ O retorno deve conter algo como:
 "config": {
   "webhooks": [
     {
-      "url": "http://n8n:5678/webhook/waha-contas-receber",
+      "url": "http://n8n:5678/webhook/waha-contas-receber-v2",
       "events": ["message"]
     }
   ]
@@ -126,7 +126,7 @@ O retorno deve conter algo como:
 O webhook esperado pelo WAHA e:
 
 ```text
-POST /webhook/waha-contas-receber
+POST /webhook/waha-contas-receber-v2
 ```
 
 Se as mensagens chegam no WAHA mas nao disparam o fluxo:
@@ -134,13 +134,13 @@ Se as mensagens chegam no WAHA mas nao disparam o fluxo:
 1. Confirme que a sessao WAHA esta `WORKING`.
 2. Confirme que `config.webhooks` nao esta `null`.
 3. Rode `sh configure-waha-webhook.sh mvp`.
-4. Confirme se o workflow do n8n com webhook `waha-contas-receber` esta ativo.
+4. Confirme se o workflow do n8n com webhook `waha-contas-receber-v2` esta ativo.
 
 Teste rapido do webhook do n8n:
 
 ```powershell
-$payload = @{ event='message'; session='default'; payload=@{ fromMe=$true; from='5511999999999@c.us'; body='teste interno webhook'; hasMedia=$false } } | ConvertTo-Json -Depth 10
-Invoke-WebRequest -UseBasicParsing -Method Post -Uri 'http://localhost:5678/webhook/waha-contas-receber' -ContentType 'application/json' -Body $payload
+$payload = @{ event='message'; session='default'; payload=@{ fromMe=$false; from='5511999999999@c.us'; body='teste interno webhook'; hasMedia=$false } } | ConvertTo-Json -Depth 10
+Invoke-WebRequest -UseBasicParsing -Method Post -Uri 'http://localhost:5678/webhook/waha-contas-receber-v2' -ContentType 'application/json' -Body $payload
 ```
 
 O esperado e:
@@ -154,16 +154,16 @@ Workflow was started
 
 As variaveis ficam no `.env`.
 
-Se usar OpenAI no n8n, use:
+Para usar OpenAI no n8n e na base de conhecimento, use:
 
 ```env
 OPENAI_API_KEY=seu_token_aqui
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-E garanta que o `docker-compose.yml` passe essas variaveis para o servico `n8n`.
+E garanta que o `docker-compose.yml` passe essas variaveis para os servicos `n8n` e `knowledge-base`.
 
-Os workflows atuais usam OpenAI por HTTP. Depois de alterar o `.env`, recrie o container do n8n para ele receber as novas variaveis.
+Os workflows atuais e o RAG usam OpenAI por HTTP. Depois de alterar o `.env`, recrie os containers afetados para eles receberem as novas variaveis.
 
 ## Comandos Uteis
 

@@ -1,0 +1,1268 @@
+{
+  "name": "MVP - Chatbot Contas a Receber Refatorado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waha-contas-receber-v2",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "chatbot-v2-webhook",
+      "name": "WAHA Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        160,
+        420
+      ],
+      "webhookId": "waha-contas-receber-v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message' || payload.fromMe === true) return [];\n\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) return [];\n\nconst mediaUrl = String(payload.media?.url || '').trim();\nconst mediaMimeType = String(payload.media?.mimetype || '').trim();\nconst hasImage = Boolean(payload.hasMedia && mediaUrl && /^image\\//i.test(mediaMimeType));\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text,\n  payload.message?.imageMessage?.caption,\n  payload.message?.videoMessage?.caption\n].find((value) => typeof value === 'string' && value.trim()) || '';\nif (!messageText && !hasImage) return [];\n\nconst senderId = String(payload.remoteJidAlt || payload._data?.remoteJidAlt || payload._data?.id?.remoteJidAlt || payload.author || payload.participant || payload.key?.participant || chatId).trim();\nconst phone = senderId.replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, '');\nconst normalizedText = String(messageText || '').trim();\n\nreturn [{ json: {\n  session: envelope.session || $json.session || 'default',\n  event,\n  phone,\n  chatId,\n  senderId,\n  text: normalizedText,\n  logText: normalizedText || (hasImage ? '[imagem recebida]' : ''),\n  hasMedia: Boolean(payload.hasMedia),\n  hasImage,\n  mediaUrl,\n  mediaMimeType,\n  rawPayload: payload,\n  rawEnvelope: envelope\n}}];"
+      },
+      "id": "chatbot-v2-normalize",
+      "name": "Normalize WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiBase = 'http://api:3000/Liftflex_API/rest/v2';\nasync function requestJson(url, options = {}) {\n  const response = await fetch(url, { ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) } });\n  const text = await response.text();\n  let payload = {};\n  if (text) {\n    try { payload = JSON.parse(text); } catch (_error) { payload = { raw: text }; }\n  }\n  if (!response.ok) return { Success: false, success: false, statusCode: response.status, error: payload };\n  return payload;\n}\n\nconst ctx = { ...$json };\nif (ctx.hasImage && ctx.mediaUrl && !ctx.document) {\n  const extraction = await requestJson(apiBase + '/ExtractDocumentFromWhatsAppImage', {\n    method: 'POST',\n    body: JSON.stringify({ MediaUrl: ctx.mediaUrl, MimeType: ctx.mediaMimeType, Caption: ctx.text || '' })\n  });\n  ctx.document = extraction.document || extraction.Document || '';\n  ctx.documentSource = extraction.documentSource || (ctx.document ? 'image' : 'image_not_found');\n  ctx.imageExtractionFound = Boolean(ctx.document);\n  ctx.imageExtractionReason = extraction.imageExtractionReason || extraction.Reason || '';\n}\nreturn [{ json: ctx }];"
+      },
+      "id": "chatbot-v2-extract-image",
+      "name": "Extract Image Document",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizeText(value) {\n  return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\n}\nfunction isOptOut(text) {\n  return new Set(['parar', 'stop', 'descadastrar', 'cancelar cobranca', 'remover meu numero', 'nao enviar', 'nao mande']).has(normalizeText(text));\n}\nfunction shouldShowWelcome(ctx) {\n  const normalized = normalizeText(ctx.text);\n  const directKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel', 'alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido', 'humano', 'atendente', 'operador', 'suporte'];\n  const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'preciso de ajuda', 'quero ajuda', 'quero atendimento'];\n  const hasDirectIntent = Boolean(ctx.hasImage || ctx.document || directKeywords.some((keyword) => normalized.includes(keyword)));\n  return (ctx.conversationState === 'idle' || !ctx.conversationStateFound) && !hasDirectIntent && greetings.some((keyword) => normalized === keyword || normalized.includes(keyword));\n}\nfunction resolveIntent(ctx) {\n  const normalized = normalizeText(ctx.text);\n  const rawText = String(ctx.text || '').trim();\n  const state = ctx.conversationState || 'idle';\n  const activeFlow = ctx.conversationFlow || '';\n  const tokenCount = normalized ? normalized.split(' ').filter(Boolean).length : 0;\n  const menuOption = normalized.match(/^(1|2|3)$/)?.[1] || '';\n  const documentOnlyMessage = Boolean(ctx.document && /^[\\d\\s.\\-/]+$/.test(rawText) && rawText.length <= 22);\n  const mentionsSecondVia = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'].some((keyword) => normalized.includes(keyword));\n  const mentionsDueDate = ['alteracao de vencimento', 'alterar vencimento', 'mudar vencimento', 'prorrogar vencimento', 'boleto venceu', 'boleto vencido', 'solicitar alteracao de vencimento'].some((keyword) => normalized.includes(keyword)) || (normalized.includes('vencimento') && (normalized.includes('alter') || normalized.includes('venc')));\n  const requestsHuman = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'].some((keyword) => normalized.includes(keyword));\n  const looksLikeKnowledgeQuery = ['qual', 'quais', 'onde', 'como', 'quando', 'endereco', 'telefone', 'numero', 'n?mero', 'email', 'e-mail', 'horario', 'empresa', 'nippon', '?'].some((keyword) => rawText.toLowerCase().includes(keyword) || normalized.includes(keyword)) || tokenCount >= 4;\n  if (!ctx.document && ctx.hasImage && ctx.mediaUrl) return { route: 'ask_document', intent: 'ask_document', nextFlow: activeFlow || 'segunda_via_boleto', reason: 'image_document_not_found' };\n  if (state === 'awaiting_menu_selection') {\n    if (menuOption === '1') return { route: 'ask_document', intent: 'ask_document', nextFlow: 'segunda_via_boleto', reason: 'menu_option_second_via' };\n    if (menuOption === '2') return { route: 'ask_document', intent: 'ask_document', nextFlow: 'alteracao_vencimento', reason: 'menu_option_due_date' };\n    if (menuOption === '3') return { route: 'ask_knowledge', intent: 'ask_knowledge', nextFlow: 'knowledge_base', reason: 'menu_option_other_subject' };\n    if (requestsHuman) return { route: 'knowledge', intent: 'default_operator', nextFlow: '', reason: 'menu_operator' };\n    if (mentionsDueDate) return { route: ctx.document ? 'boleto' : 'ask_document', intent: ctx.document ? 'segunda_via_boleto' : 'ask_document', nextFlow: 'alteracao_vencimento', reason: ctx.document ? 'menu_due_date_with_document' : 'menu_due_date_without_document' };\n    if (mentionsSecondVia || ctx.hasImage || documentOnlyMessage) return { route: ctx.document ? 'boleto' : 'ask_document', intent: ctx.document ? 'segunda_via_boleto' : 'ask_document', nextFlow: 'segunda_via_boleto', reason: ctx.document ? 'menu_second_via_with_document' : 'menu_second_via_without_document' };\n    if (!looksLikeKnowledgeQuery) return { route: 'welcome', intent: 'show_welcome_menu', nextFlow: '', reason: 'menu_repeat' };\n  }\n  if (state === 'awaiting_knowledge_question' && normalized) return { route: 'knowledge', intent: 'knowledge_base_question', nextFlow: '', reason: 'state_awaiting_knowledge_question' };\n  if (requestsHuman || looksLikeKnowledgeQuery) return { route: 'knowledge', intent: requestsHuman ? 'default_operator' : 'knowledge_base_question', nextFlow: '', reason: requestsHuman ? 'handoff_keyword' : 'knowledge_query' };\n  if (documentOnlyMessage) return { route: 'boleto', intent: 'segunda_via_boleto', nextFlow: activeFlow || 'segunda_via_boleto', reason: 'document_only_message' };\n  if (ctx.document && (mentionsDueDate || activeFlow === 'alteracao_vencimento')) return { route: 'boleto', intent: 'segunda_via_boleto', nextFlow: 'alteracao_vencimento', reason: 'due_date_with_document' };\n  if (!ctx.document && mentionsDueDate) return { route: 'ask_document', intent: 'ask_document', nextFlow: 'alteracao_vencimento', reason: 'due_date_without_document' };\n  if (ctx.document && (mentionsSecondVia || state === 'awaiting_document' || activeFlow === 'segunda_via_boleto' || ctx.documentSource)) return { route: 'boleto', intent: 'segunda_via_boleto', nextFlow: activeFlow || 'segunda_via_boleto', reason: 'document_with_receivables_context' };\n  if (!ctx.document && (mentionsSecondVia || state === 'awaiting_document' || activeFlow === 'segunda_via_boleto')) return { route: 'ask_document', intent: 'ask_document', nextFlow: activeFlow || 'segunda_via_boleto', reason: 'boleto_keyword_without_document' };\n  return { route: 'knowledge', intent: 'default_operator', nextFlow: '', reason: 'default_operator' };\n}\nlet decision;\nif (isOptOut($json.text)) decision = { route: 'opt_out', intent: 'opt_out', nextFlow: '', reason: 'opt_out_command' };\nelse if (shouldShowWelcome($json)) decision = { route: 'welcome', intent: 'welcome_menu', nextFlow: '', reason: 'welcome_menu' };\nelse decision = resolveIntent($json);\nreturn [{ json: { ...$json, ...decision, resolvedFlow: decision.nextFlow || $json.conversationFlow || 'segunda_via_boleto', classificationReason: decision.reason } }];"
+      },
+      "id": "chatbot-v2-resolve-intent",
+      "name": "Resolve Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-opt-out-condition",
+              "leftValue": "={{$json.route}}",
+              "rightValue": "opt_out",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-opt-out",
+      "name": "If Opt Out",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2020,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiBase = 'http://api:3000/Liftflex_API/rest/v2';\nasync function post(path, body) {\n  await fetch(apiBase + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });\n}\nawait post('/SetWhatsAppOptOut', { Telefone: $json.phone, OptOut: true, Reason: 'Cliente solicitou bloqueio de cobrancas automaticas no WhatsApp', Source: 'chatbot', SourceMessage: $json.text });\nawait post('/ClearConversationState', { Telefone: $json.phone });\nreturn [{ json: { ...$json, replyText: 'Entendido. Nao enviaremos novas cobrancas automaticas por este WhatsApp. Se quiser retomar no futuro, fale com um operador.', logIntent: 'opt_out' } }];"
+      },
+      "id": "chatbot-v2-handle-opt-out",
+      "name": "Handle Opt Out",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-welcome-condition",
+              "leftValue": "={{$json.route}}",
+              "rightValue": "welcome",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-welcome",
+      "name": "If Welcome",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, replyText: 'Ola! Bem-vindo(a) ao atendimento da Nippon Elevadores.\\n\\nEste canal pode auxiliar com assuntos de contas a receber. No momento, voce pode escolher uma das opcoes abaixo:\\n1. Solicitar segunda via de boleto\\n2. Solicitar alteracao de vencimento\\n3. Falar sobre outro assunto\\n\\nResponda com o numero da opcao desejada.\\nCaso necessario, um atendente dara continuidade ao seu atendimento.', logIntent: 'welcome_menu' } }];"
+      },
+      "id": "chatbot-v2-handle-welcome",
+      "name": "Handle Welcome Menu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2580,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-ask-document-condition",
+              "leftValue": "={{$json.route}}",
+              "rightValue": "ask_document",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-ask-document",
+      "name": "If Ask Document",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2580,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const flow = $json.resolvedFlow || $json.nextFlow || $json.conversationFlow || 'segunda_via_boleto';\nconst replyText = flow === 'alteracao_vencimento'\n  ? 'Para solicitar a alteracao de vencimento, informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.'\n  : ($json.classificationReason === 'image_document_not_found'\n    ? 'Nao consegui identificar o CPF ou CNPJ na imagem. Se preferir, envie o documento digitado ou uma foto mais legivel do boleto.'\n    : 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro. Se preferir, envie uma foto legivel do boleto.');\nreturn [{ json: { ...$json, replyText, logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'ask_document' } }];"
+      },
+      "id": "chatbot-v2-handle-ask-document",
+      "name": "Handle Ask Document",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-boleto-condition",
+              "leftValue": "={{$json.route}}",
+              "rightValue": "boleto",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-boleto",
+      "name": "If Boleto Flow",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Chatbot refatorado\n\nFluxo em camadas: entrada, contexto, extracao opcional de documento, decisao de rota, handlers pequenos e finalizacao comum.",
+        "height": 200,
+        "width": 460,
+        "color": 4
+      },
+      "id": "chatbot-v2-note-architecture",
+      "name": "Nota - Arquitetura",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        120,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Rotas principais\n\nopt_out, welcome, ask_document, boleto e knowledge. Cada handler monta apenas a resposta e efeitos de estado; o envio/log ficam centralizados.",
+        "height": 200,
+        "width": 520,
+        "color": 5
+      },
+      "id": "chatbot-v2-note-routes",
+      "name": "Nota - Rotas",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Role: 'user', Message: $json.logText || $json.text || '[mensagem sem texto]', Channel: 'whatsapp', Metadata: { event: $json.event, chatId: $json.chatId, hasImage: $json.hasImage || false, mediaMimeType: $json.mediaMimeType || '' } }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-log-inbound",
+      "name": "Log Inbound Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/MvpConfig",
+        "options": {}
+      },
+      "id": "chatbot-v2-get-config",
+      "name": "Get MVP Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetConversationState",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Telefone",
+              "value": "={{$node[\"Normalize WhatsApp Message\"].json.phone}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "chatbot-v2-get-state",
+      "name": "Get Conversation State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $item(0).$node[\"Normalize WhatsApp Message\"].json;\nconst config = $item(0).$node[\"Get MVP Config\"].json;\nconst state = $json || {};\nconst digits = String(incoming.text || '').replace(/\\D/g, '');\nconst documentMatch = digits.match(/(\\d{14}|\\d{11})/);\nreturn [\n  {\n    json: {\n      ...incoming,\n      document: documentMatch ? documentMatch[1] : '',\n      fallbackMessage: config.DefaultFallbackMessage || 'Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.',\n      defaultDelayDays: Number(config.DefaultDelayDays || 3),\n      initialMessage: config.InitialWhatsAppMessage,\n      conversationState: state.CurrentState || 'idle',\n      conversationFlow: state.ActiveFlow || '',\n      conversationLastIntent: state.LastIntent || '',\n      conversationContext: state.Context || {},\n      conversationStateFound: Boolean(state.Found),\n      conversationStateExpiresAt: state.ExpiresAt || null,\n      conversationStateTtlHours: Number(config.ConversationStateTtlHours || 12)\n    }\n  }\n];"
+      },
+      "id": "chatbot-v2-merge-context",
+      "name": "Merge Chat Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_menu_selection', ActiveFlow: '', LastIntent: 'welcome_menu', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-set-awaiting-menu",
+      "name": "Set Awaiting Menu State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://waha:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{$env.WAHA_API_KEY || 'changeme'}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: $json.session || 'default', chatId: $json.chatId, text: $json.replyText }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-send-whatsapp",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3740,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, DocumentoInformado: $json.document || null, Role: 'assistant', Message: $json.replyText, Intent: $json.logIntent, Channel: 'whatsapp', Metadata: { chatId: $json.chatId, route: $json.route || '', classificationReason: $json.classificationReason || '' } }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-log-outbound",
+      "name": "Log Outbound Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4000,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_document', ActiveFlow: $json.nextFlow || $json.resolvedFlow || 'segunda_via_boleto', LastIntent: 'ask_document', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-set-awaiting-document",
+      "name": "Set Awaiting Document State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3140,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/ValidarCprfTelefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "TenantId",
+              "value": "1"
+            },
+            {
+              "name": "Cprf",
+              "value": "={{$json.document}}"
+            },
+            {
+              "name": "Telefone",
+              "value": "={{String($json.rawPayload?._data?.key?.remoteJidAlt || $json.phone || '').replace(/@s.whatsapp.net$/i, '').replace(/@c.us$/i, '').replace(/@lid$/i, '')}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "chatbot-v2-validate-document-phone",
+      "name": "Validate Document And Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3140,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-validation-ok-condition",
+              "leftValue": "={{$json.CprfValido && $json.TelefoneValido}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-validation-ok",
+      "name": "If Validation OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nreturn [{ json: { ...context, replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.', logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto' } }];"
+      },
+      "id": "chatbot-v2-build-validation-error",
+      "name": "Build Validation Error Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3660,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://api:3000/Liftflex_API/rest/v2/GetBoletoByCprf",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Cprf",
+              "value": "={{$node[\"Merge Chat Context\"].json.document}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "chatbot-v2-get-boleto-document",
+      "name": "Get Boleto By Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3660,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [{ json: { ...context, canUpdate: false, replyText: flow === 'alteracao_vencimento' ? 'Nao localizamos um boleto elegivel para alteracao de vencimento neste momento. Em breve um operador dara continuidade ao atendimento.' : 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.', logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto' } }];\n}\nconst currentDate = new Date(boleto.Vencimento + 'T00:00:00Z');\ncurrentDate.setUTCDate(currentDate.getUTCDate() + Number(context.defaultDelayDays || 3));\nconst newDueDate = currentDate.toISOString().slice(0, 10);\nreturn [{ json: { ...context, resolvedFlow: flow, canUpdate: true, boletoId: boleto.Identificador, tenantId: 1, currentDueDate: boleto.Vencimento, newDueDate, linhaDigitavel: boleto.LinhaDigitavel, logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto' } }];"
+      },
+      "id": "chatbot-v2-prepare-due-date",
+      "name": "Prepare Due Date Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-can-update-condition",
+              "leftValue": "={{$json.canUpdate}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-can-update",
+      "name": "If Can Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/UpdateBoletoDueDate",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "BoletoId",
+              "value": "={{$json.boletoId}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "={{$json.tenantId}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ RequestedDocument: $json.document, RequestedPhone: String($node[\"Merge Chat Context\"].json.rawPayload?._data?.key?.remoteJidAlt || $node[\"Merge Chat Context\"].json.phone || '').replace(/@s.whatsapp.net$/i, '').replace(/@c.us$/i, '').replace(/@lid$/i, ''), CurrentDueDate: $json.currentDueDate, NewDueDate: $json.newDueDate, Reason: 'Perda ou esquecimento de boleto', Channel: 'whatsapp', RequestedBy: 'cliente' }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-update-due-date",
+      "name": "Update Due Date",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4440,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Prepare Due Date Update\"].json;\nconst flow = context.resolvedFlow || context.nextFlow || context.conversationFlow || 'segunda_via_boleto';\nconst closingText = 'Agradecemos o seu contato com a Nippon Elevadores. Este atendimento foi encerrado. Se precisar, estamos a disposicao.';\nconst replyText = flow === 'alteracao_vencimento'\n  ? 'Solicitacao concluida. Prorrogamos o vencimento do seu boleto para ' + context.newDueDate + '. Linha digitavel: ' + context.linhaDigitavel + '\\n\\n' + closingText\n  : 'Localizamos seu boleto e prorrogamos o vencimento para ' + context.newDueDate + '. Linha digitavel: ' + context.linhaDigitavel + '\\n\\n' + closingText;\nreturn [{ json: { ...context, replyText, logIntent: flow === 'alteracao_vencimento' ? 'alteracao_vencimento' : 'segunda_via_boleto' } }];"
+      },
+      "id": "chatbot-v2-build-success",
+      "name": "Build Success Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4700,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/ClearConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-clear-state",
+      "name": "Clear Conversation State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4960,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/KnowledgeBaseAnswer",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Question: $json.text, Telefone: $json.phone, MaxChunks: 4, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-query-kb",
+      "name": "Query Knowledge Base",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3140,
+        920
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-kb-found-condition",
+              "leftValue": "={{$json.knowledgeBaseFound || $json.Found}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-kb-found",
+      "name": "If KB Answer Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst answer = $json.knowledgeBaseAnswer || $json.Answer || '';\nreturn [{ json: { ...context, replyText: answer, logIntent: 'knowledge_base_answer', classificationReason: 'knowledge_base_answer' } }];"
+      },
+      "id": "chatbot-v2-build-kb-reply",
+      "name": "Build KB Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3660,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst normalized = String(context.text || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst asksNipponNumber = normalized.includes('nippon') && (normalized.includes('numero') || normalized.includes('telefone') || normalized.includes('contato'));\nconst fallbackMessage = asksNipponNumber\n  ? 'Consultei a base de conhecimento, mas ainda nao ha telefone oficial da Nippon cadastrado nela. Vou encaminhar seu atendimento para um operador pelo proprio WhatsApp.'\n  : (context.fallbackMessage || 'Nao encontrei essa informacao na base de conhecimento agora. Vou encaminhar seu atendimento para um operador.');\nreturn [{ json: { ...context, replyText: fallbackMessage, logIntent: 'default_operator' } }];"
+      },
+      "id": "chatbot-v2-build-fallback",
+      "name": "Build Fallback Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3660,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "chatbot-v2-if-ask-knowledge-condition",
+              "leftValue": "={{$json.route}}",
+              "rightValue": "ask_knowledge",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chatbot-v2-if-ask-knowledge",
+      "name": "If Ask Knowledge Question",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, replyText: 'Claro. Me envie sua pergunta ou descreva o assunto para eu consultar a base de conhecimento da Nippon.', logIntent: 'ask_knowledge_question' } }];"
+      },
+      "id": "chatbot-v2-handle-ask-knowledge",
+      "name": "Handle Ask Knowledge Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3140,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_knowledge_question', ActiveFlow: 'knowledge_base', LastIntent: 'ask_knowledge_question', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "chatbot-v2-set-awaiting-knowledge",
+      "name": "Set Awaiting Knowledge State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3420,
+        620
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WAHA Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Log Inbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Inbound Chat": {
+      "main": [
+        [
+          {
+            "node": "Get MVP Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get MVP Config": {
+      "main": [
+        [
+          {
+            "node": "Get Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Merge Chat Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Chat Context": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Document": {
+      "main": [
+        [
+          {
+            "node": "Resolve Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Intent": {
+      "main": [
+        [
+          {
+            "node": "If Opt Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Opt Out": {
+      "main": [
+        [
+          {
+            "node": "Handle Opt Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Opt Out": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Welcome": {
+      "main": [
+        [
+          {
+            "node": "Handle Welcome Menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Ask Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Welcome Menu": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Menu State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Awaiting Menu State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Ask Document": {
+      "main": [
+        [
+          {
+            "node": "Handle Ask Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Ask Knowledge Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Ask Document": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Document State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Awaiting Document State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Boleto Flow": {
+      "main": [
+        [
+          {
+            "node": "Validate Document And Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Document And Phone": {
+      "main": [
+        [
+          {
+            "node": "If Validation OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Validation OK": {
+      "main": [
+        [
+          {
+            "node": "Get Boleto By Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Validation Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Validation Error Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Boleto By Document": {
+      "main": [
+        [
+          {
+            "node": "Prepare Due Date Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Due Date Update": {
+      "main": [
+        [
+          {
+            "node": "If Can Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Can Update": {
+      "main": [
+        [
+          {
+            "node": "Update Due Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Due Date": {
+      "main": [
+        [
+          {
+            "node": "Build Success Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "If KB Answer Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If KB Answer Found": {
+      "main": [
+        [
+          {
+            "node": "Build KB Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Fallback Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build KB Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Fallback Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clear Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Conversation State": {
+      "main": [
+        []
+      ]
+    },
+    "If Ask Knowledge Question": {
+      "main": [
+        [
+          {
+            "node": "Handle Ask Knowledge Question",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Boleto Flow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Ask Knowledge Question": {
+      "main": [
+        [
+          {
+            "node": "Set Awaiting Knowledge State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Awaiting Knowledge State": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Outbound Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c7e7e0cc-7d71-4b25-bae5-0362dc5139f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "local-refactor"
+  },
+  "id": "chatbot-contas-receber-refatorado",
+  "tags": []
+}

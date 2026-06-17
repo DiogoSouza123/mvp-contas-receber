@@ -67,8 +67,8 @@ services:
       context: ./knowledge-base
     container_name: mvp-knowledge-base
     environment:
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
-      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
       KNOWLEDGE_BASE_SOURCE_DIR: /app/source
       KNOWLEDGE_BASE_INDEX_DIR: /app/index
       KNOWLEDGE_BASE_TOP_K: ${KNOWLEDGE_BASE_TOP_K}

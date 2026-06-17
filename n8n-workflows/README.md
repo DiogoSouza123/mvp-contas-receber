@@ -4,6 +4,7 @@ Arquivos disponiveis:
 
 - `cobranca-diaria.json`
 - `chatbot-contas-receber.json`
+- `chatbot-contas-receber-refatorado.json`
 
 ## Importacao
 
@@ -23,9 +24,13 @@ O webhook do chatbot usa o path:
 
 `/webhook/waha-contas-receber`
 
-Como o WAHA esta na mesma rede Docker do n8n, configure a sessao `default` do WAHA para apontar para:
+O workflow refatorado usa um path separado para teste/importacao sem conflitar com o antigo:
 
-`http://n8n:5678/webhook/waha-contas-receber`
+`/webhook/waha-contas-receber-v2`
+
+Como o WAHA esta na mesma rede Docker do n8n, configure a sessao `default` do WAHA para apontar para o workflow refatorado:
+
+`http://n8n:5678/webhook/waha-contas-receber-v2`
 
 Com evento:
 
@@ -37,7 +42,7 @@ Com evento:
 curl -X PUT "http://localhost:3001/api/sessions/default" \
   -H "X-Api-Key: changeme" \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"default\",\"config\":{\"webhooks\":[{\"url\":\"http://n8n:5678/webhook/waha-contas-receber\",\"events\":[\"message\"]}]}}"
+  -d "{\"name\":\"default\",\"config\":{\"webhooks\":[{\"url\":\"http://n8n:5678/webhook/waha-contas-receber-v2\",\"events\":[\"message\"]}]}}"
 ```
 
 ## Observacoes

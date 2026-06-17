@@ -101,6 +101,10 @@ def get_min_score() -> float:
     return float(os.getenv("KNOWLEDGE_BASE_MIN_SCORE", "1.2"))
 
 
+def get_openai_model() -> str:
+    return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
 def read_supported_file(file_path: Path) -> str:
     suffix = file_path.suffix.lower()
     if suffix == ".docx":
@@ -275,32 +279,51 @@ def generate_answer(question: str, chunks: list[dict[str, Any]]) -> str:
     context = "\n\n".join(
         f"[Fonte: {chunk['source']}]\n{chunk['text']}" for chunk in chunks
     )
-    prompt = "\n".join(
-        [
-            "Voce responde perguntas institucionais da Nippon Elevadores usando somente o contexto fornecido.",
-            "Responda em portugues do Brasil, de forma direta, objetiva e curta, com no maximo 2 frases.",
-            "Se o contexto nao responder a pergunta com seguranca, responda exatamente: SEM_RESPOSTA",
-            "",
-            f"Pergunta: {question}",
-            "",
-            "Contexto:",
-            context,
-        ]
-    )
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY nao configurada.")
 
     response = requests.post(
-        f"{os.getenv('OLLAMA_BASE_URL', 'http://host.docker.internal:11434')}/api/chat",
+        "https://api.openai.com/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
         json={
-            "model": os.getenv("OLLAMA_TEXT_MODEL", "llama3:latest"),
-            "stream": False,
-            "options": {"temperature": 0},
-            "messages": [{"role": "user", "content": prompt}],
+            "model": get_openai_model(),
+            "temperature": 0,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Voce responde perguntas institucionais da Nippon Elevadores "
+                        "usando somente o contexto fornecido. Responda em portugues "
+                        "do Brasil, de forma direta, objetiva e curta, com no maximo "
+                        "2 frases. Se o contexto nao responder a pergunta com "
+                        "seguranca, responda exatamente: SEM_RESPOSTA"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Pergunta: {question}\n\nContexto:\n{context}",
+                },
+            ],
         },
         timeout=120,
     )
     response.raise_for_status()
     payload = response.json()
-    return str(payload.get("message", {}).get("content", "")).strip()
+    return str(payload.get("choices", [{}])[0].get("message", {}).get("content", "")).strip()
+
+
+def generate_extractive_answer(chunks: list[dict[str, Any]]) -> str:
+    if not chunks:
+        return ""
+
+    text = re.sub(r"\s+", " ", chunks[0]["text"]).strip()
+    if len(text) <= 320:
+        return text
+    return text[:317].rstrip() + "..."
 
 
 @app.get("/health")
@@ -345,7 +368,11 @@ def answer_question(request: AnswerRequest) -> dict[str, Any]:
                 "topScore": round(top_score, 4),
             }
 
-        raw_answer = generate_answer(question, ranked_chunks)
+        try:
+            raw_answer = generate_answer(question, ranked_chunks)
+        except requests.RequestException:
+            raw_answer = generate_extractive_answer(ranked_chunks)
+
         normalized_answer = normalize_text(raw_answer)
         if not raw_answer or normalized_answer == "sem_resposta":
             return {
