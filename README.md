@@ -1,6 +1,6 @@
 # MVP de Cobranca e Chatbot
 
-Projeto local em Docker para validar um MVP de contas a receber com API fake, PostgreSQL, n8n, WAHA e servicos auxiliares de IA/OCR.
+Projeto local em Docker para validar um MVP de contas a receber com API fake, PostgreSQL, n8n, WAHA e servicos auxiliares de IA.
 
 ## Componentes
 
@@ -9,7 +9,6 @@ Projeto local em Docker para validar um MVP de contas a receber com API fake, Po
 - `postgres`: banco local com schema, seed e dados persistidos em `postgres_data`.
 - `n8n`: orquestracao dos fluxos, persistido em `n8n_data`.
 - `waha`: integracao local com WhatsApp, persistida em `waha_sessions`.
-- `doc-extractor`: extracao de documento a partir de imagem de boleto.
 - `knowledge-base`: base local de conhecimento/RAG simples.
 
 ## Estrutura
@@ -53,7 +52,6 @@ URLs esperadas:
 - Frontend: `http://localhost:3002`
 - WAHA: `http://localhost:3001`
 - n8n: `http://localhost:5678`
-- doc-extractor: `http://localhost:8010`
 - knowledge-base: `http://localhost:8011`
 - Postgres: `localhost:5432`
 
@@ -139,7 +137,7 @@ Se as mensagens chegam no WAHA mas nao disparam o fluxo:
 Teste rapido do webhook do n8n:
 
 ```powershell
-$payload = @{ event='message'; session='default'; payload=@{ fromMe=$false; from='5511999999999@c.us'; body='teste interno webhook'; hasMedia=$false } } | ConvertTo-Json -Depth 10
+$payload = @{ event='message'; session='default'; payload=@{ fromMe=$false; from='5511999999999@c.us'; body='teste interno webhook' } } | ConvertTo-Json -Depth 10
 Invoke-WebRequest -UseBasicParsing -Method Post -Uri 'http://localhost:5678/webhook/waha-contas-receber-v2' -ContentType 'application/json' -Body $payload
 ```
 
@@ -226,12 +224,10 @@ Endpoints principais:
 - `GET /GetBoletoByCprf`
 - `GET /ValidarCprfTelefone`
 - `POST /UpdateWhatsAppBoletoMessage`
-- `POST /UpdateBoletoDueDate`
 - `GET /MvpConfig`
 - `GET /GetConversationState`
 - `POST /SetConversationState`
 - `POST /ClearConversationState`
-- `POST /ExtractDocumentFromWhatsAppImage`
 - `POST /KnowledgeBaseAnswer`
 - `POST /ChatbotLog`
 - `POST /CheckWhatsAppPolicy`
@@ -271,13 +267,6 @@ curl -X POST "http://localhost:3000/Liftflex_API/rest/v2/UpdateWhatsAppBoletoMes
   -d "{\"Status\":true,\"Message\":\"Mensagem enviada com sucesso\"}"
 ```
 
-Prorrogar vencimento:
-
-```bash
-curl -X POST "http://localhost:3000/Liftflex_API/rest/v2/UpdateBoletoDueDate?BoletoId=3001&TenantId=1" \
-  -H "Content-Type: application/json" \
-  -d "{\"RequestedDocument\":\"12345678000199\",\"RequestedPhone\":\"5511999990001\",\"CurrentDueDate\":\"2026-03-10\",\"NewDueDate\":\"2026-03-13\",\"Reason\":\"Perda ou esquecimento de boleto\",\"Channel\":\"whatsapp\",\"RequestedBy\":\"cliente\"}"
-```
 
 ## Troubleshooting
 

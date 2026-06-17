@@ -3,7 +3,6 @@
 Arquivos disponiveis:
 
 - `cobranca-diaria.json`
-- `chatbot-contas-receber.json`
 - `chatbot-contas-receber-refatorado.json`
 
 ## Importacao
@@ -20,11 +19,7 @@ Arquivos disponiveis:
 
 ## Importante
 
-O webhook do chatbot usa o path:
-
-`/webhook/waha-contas-receber`
-
-O workflow refatorado usa um path separado para teste/importacao sem conflitar com o antigo:
+O workflow do chatbot usa o path:
 
 `/webhook/waha-contas-receber-v2`
 

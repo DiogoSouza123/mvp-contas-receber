@@ -18,7 +18,6 @@ services:
     container_name: mvp-api
     depends_on:
       - postgres
-      - doc-extractor
       - knowledge-base
     environment:
       PORT: 3000
@@ -31,7 +30,6 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL}
       OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
-      DOC_EXTRACTOR_BASE_URL: ${DOC_EXTRACTOR_BASE_URL}
       KNOWLEDGE_BASE_URL: ${KNOWLEDGE_BASE_URL}
     ports:
       - "3000:3000"
@@ -49,18 +47,6 @@ services:
       APP_TENANT_ID: ${APP_TENANT_ID:-1}
     ports:
       - "3002:3000"
-
-  doc-extractor:
-    build:
-      context: ./doc-extractor
-    container_name: mvp-doc-extractor
-    environment:
-      WAHA_API_KEY: ${WAHA_API_KEY}
-      WAHA_INTERNAL_BASE_URL: ${WAHA_INTERNAL_BASE_URL}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
-      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL}
-    ports:
-      - "8010:8010"
 
   knowledge-base:
     build:
