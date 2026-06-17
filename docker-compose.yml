@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: mvp-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     ports:
       - "5432:5432"
     volumes:
@@ -22,7 +22,7 @@ services:
       - knowledge-base
     environment:
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       DEFAULT_DELAY_DAYS: 3
       DAILY_RUN_TIME: "08:00"
       DEFAULT_FALLBACK_MESSAGE: Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.
@@ -35,6 +35,20 @@ services:
       KNOWLEDGE_BASE_URL: ${KNOWLEDGE_BASE_URL}
     ports:
       - "3000:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mvp-frontend
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      APP_TENANT_ID: ${APP_TENANT_ID:-1}
+    ports:
+      - "3002:3000"
 
   doc-extractor:
     build:
