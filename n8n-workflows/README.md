@@ -4,6 +4,7 @@ Arquivos disponiveis:
 
 - `cobranca-diaria.json`
 - `chatbot-contas-receber-refatorado.json`
+- `chatbot-contas-receber-telegram.json`
 
 ## Importacao
 
@@ -16,12 +17,15 @@ Arquivos disponiveis:
    - `OPENAI_API_KEY`
    - `OPENAI_MODEL` opcional
    - `WAHA_API_KEY`
+   - `TELEGRAM_BOT_TOKEN` para o clone com Telegram
 
 ## Importante
 
 O workflow do chatbot usa o path:
 
 `/webhook/waha-contas-receber-v2`
+
+O clone multicanal com Telegram usa polling pela API do Telegram, entao nao precisa de dominio publico para testes locais.
 
 Como o WAHA esta na mesma rede Docker do n8n, configure a sessao `default` do WAHA para apontar para o workflow refatorado:
 
@@ -30,6 +34,20 @@ Como o WAHA esta na mesma rede Docker do n8n, configure a sessao `default` do WA
 Com evento:
 
 - `message`
+
+## Configuracao do Telegram
+
+No clone `chatbot-contas-receber-telegram.json`, o node `Telegram Poll Every Minute` dispara a busca de mensagens e o node `Poll Telegram Updates` usa `TELEGRAM_BOT_TOKEN` para consultar o Telegram.
+
+Passos recomendados:
+
+1. Importe o workflow `chatbot-contas-receber-telegram.json`.
+2. Confirme que `TELEGRAM_BOT_TOKEN` esta no `.env`.
+3. Recrie o container do n8n para carregar a variavel.
+4. Salve e ative o workflow.
+5. Envie uma mensagem para o bot no Telegram e aguarde ate 1 minuto.
+
+Com polling, o n8n consulta novas mensagens periodicamente com `getUpdates`; por isso nao precisa de URL publica HTTPS.
 
 ## Exemplo de configuracao do webhook do WAHA
 
