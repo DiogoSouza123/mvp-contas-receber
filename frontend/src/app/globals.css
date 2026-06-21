@@ -106,6 +106,7 @@ body {
 
 .input-group input,
 .input-group select,
+.input-group textarea,
 .chat-input {
   width: 100%;
   border-radius: 10px;
@@ -764,4 +765,90 @@ body {
   .chat-popup {
     height: min(560px, calc(100vh - 1.3rem));
   }
+}
+
+.top-nav {
+  background: linear-gradient(180deg, #202020, #121212);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.top-nav-inner {
+  width: min(1400px, 100% - 3rem);
+  margin: 0 auto;
+  display: flex;
+  gap: 1.25rem;
+  padding: 0.75rem 0;
+}
+
+.top-nav-link {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
+}
+
+.top-nav-link:hover {
+  color: #fff;
+}
+
+.filters-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.btn-secondary {
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.btn-secondary[disabled] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.config-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.config-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.config-template {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.config-helper {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.config-error {
+  margin: 0;
+  color: var(--red);
+  font-size: 0.82rem;
+}
+
+.config-success {
+  margin: 0;
+  color: var(--green);
+  font-size: 0.82rem;
+}
+
+.cell-truncate {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
