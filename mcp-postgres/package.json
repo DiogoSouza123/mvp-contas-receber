@@ -1,0 +1,16 @@
+{
+  "name": "mvp-mcp-postgres",
+  "version": "1.0.0",
+  "description": "Servidor MCP read-only para o Chat Gerencial consultar o Postgres do MVP",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "express": "^4.21.2",
+    "pg": "^8.13.3",
+    "zod": "^3.23.8"
+  }
+}

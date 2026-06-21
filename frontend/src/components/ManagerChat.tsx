@@ -2,22 +2,18 @@
 
 import { useActionState, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
-import { askManagerAssistant } from "@/app/actions";
+import { askManagerAssistant, type ManagerAnswer } from "@/app/actions";
 
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  sql?: string;
-  rowsCount?: number;
-  error?: boolean;
-};
+type ChatMessage =
+  | { id: string; role: "user"; text: string }
+  | { id: string; role: "assistant"; text: string; error?: boolean }
+  | { id: string; role: "assistant"; answer: ManagerAnswer; sql: string; rowsCount: number };
 
 type ChatState = {
   requestId: string;
   ok: boolean;
   question: string;
-  answer: string;
+  answer: ManagerAnswer | null;
   sql: string;
   rowsCount: number;
   error: string;
@@ -26,19 +22,77 @@ type ChatState = {
 const assistantGreeting: ChatMessage = {
   id: "greeting",
   role: "assistant",
-  content:
-    "Sou o assistente gerencial. Pergunte sobre inadimplência, performance de cobrança, clientes em risco, taxa de sucesso de WhatsApp e tendências de vencimento."
+  text: "Sou o assistente gerencial. Pergunte sobre inadimplência, performance de cobrança, clientes em risco, taxa de sucesso de WhatsApp e tendências de vencimento."
 };
 
 const initialChatState: ChatState = {
   requestId: "",
   ok: false,
   question: "",
-  answer: "",
+  answer: null,
   sql: "",
   rowsCount: 0,
   error: ""
 };
+
+function AssistantAnswer({ answer, sql, rowsCount }: { answer: ManagerAnswer; sql: string; rowsCount: number }) {
+  return (
+    <>
+      <p className="chat-summary">{answer.resumo}</p>
+
+      {answer.metricas.length > 0 ? (
+        <div className="chat-metrics">
+          {answer.metricas.map((metrica, index) => (
+            <div className="chat-metric-chip" key={`${metrica.rotulo}-${index}`}>
+              <span className="chat-metric-label">{metrica.rotulo}</span>
+              <span className="chat-metric-value">{metrica.valor}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {answer.tabela ? (
+        <div className="chat-table-wrapper">
+          <table className="chat-table">
+            <thead>
+              <tr>
+                {answer.tabela.colunas.map((coluna) => (
+                  <th key={coluna}>{coluna}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {answer.tabela.linhas.map((linha, rowIndex) => (
+                <tr key={rowIndex}>
+                  {linha.map((celula, cellIndex) => (
+                    <td key={cellIndex}>{celula}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {answer.alertas.length > 0 ? (
+        <ul className="chat-alerts">
+          {answer.alertas.map((alerta, index) => (
+            <li key={index} className="chat-alert-item">
+              {alerta}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {answer.proximaAcao ? <p className="chat-next-action">Próxima ação: {answer.proximaAcao}</p> : null}
+
+      <details className="chat-sql">
+        <summary>SQL executada ({rowsCount} linha(s) retornada(s))</summary>
+        <pre>{sql}</pre>
+      </details>
+    </>
+  );
+}
 
 export function ManagerChat() {
   const [state, formAction, pending] = useActionState(askManagerAssistant, initialChatState);
@@ -59,17 +113,24 @@ export function ManagerChat() {
     const userMessage: ChatMessage = {
       id: `u-${state.requestId}`,
       role: "user",
-      content: state.question
+      text: state.question
     };
 
-    const assistantMessage: ChatMessage = {
-      id: `a-${state.requestId}`,
-      role: "assistant",
-      content: state.ok ? state.answer : state.error || "Não foi possível responder agora.",
-      sql: state.ok ? state.sql : undefined,
-      rowsCount: state.ok ? state.rowsCount : undefined,
-      error: !state.ok
-    };
+    const assistantMessage: ChatMessage =
+      state.ok && state.answer
+        ? {
+            id: `a-${state.requestId}`,
+            role: "assistant",
+            answer: state.answer,
+            sql: state.sql,
+            rowsCount: state.rowsCount
+          }
+        : {
+            id: `a-${state.requestId}`,
+            role: "assistant",
+            text: state.error || "Não foi possível responder agora.",
+            error: true
+          };
 
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
@@ -122,15 +183,16 @@ export function ManagerChat() {
 
           <div className="chat-log" ref={chatLogRef}>
             {messages.map((message) => (
-              <article key={message.id} className={`chat-message ${message.role} ${message.error ? "chat-error" : ""}`}>
+              <article
+                key={message.id}
+                className={`chat-message ${message.role} ${"error" in message && message.error ? "chat-error" : ""}`}
+              >
                 <p className="chat-role">{message.role === "user" ? "Gestor" : "Assistente"}</p>
-                <p>{message.content}</p>
-                {message.sql ? (
-                  <details className="chat-sql">
-                    <summary>SQL executada ({message.rowsCount} linha(s) retornada(s))</summary>
-                    <pre>{message.sql}</pre>
-                  </details>
-                ) : null}
+                {"answer" in message ? (
+                  <AssistantAnswer answer={message.answer} sql={message.sql} rowsCount={message.rowsCount} />
+                ) : (
+                  <p>{message.text}</p>
+                )}
               </article>
             ))}
             {pending ? (

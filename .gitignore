@@ -24,3 +24,6 @@ waha_sessions_failed_*/
 *.tmp
 docker-compose.before-*.yml
 docker-compose.*.backup.yml
+
+# Rascunho de trabalho - acompanhamento de requisitos pendentes
+REQUISITOS_PENDENTES.md
