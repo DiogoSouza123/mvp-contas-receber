@@ -9,7 +9,7 @@
         "options": {}
       },
       "id": "chatbot-v2-webhook",
-      "name": "WAHA Webhook",
+      "name": "Webhook WAHA",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -23,7 +23,7 @@
         "jsCode": "const envelope = $json.body && typeof $json.body === 'object' ? $json.body : $json;\n\nfunction asText(value) {\n  return typeof value === 'string' && value.trim() ? value.trim() : '';\n}\n\nconst telegramMessage = envelope.message || envelope.edited_message || null;\nif (telegramMessage && telegramMessage.chat) {\n  if (telegramMessage.from?.is_bot === true) return [];\n\n  const chatId = String(telegramMessage.chat.id || '').trim();\n  const messageText = [\n    telegramMessage.text,\n    telegramMessage.caption\n  ].map(asText).find(Boolean) || '';\n\n  if (!chatId || !messageText) return [];\n\n  const senderId = String(telegramMessage.from?.id || chatId).trim();\n  const normalizedText = messageText.trim();\n\n  return [{ json: {\n    channel: 'telegram',\n    session: 'telegram',\n    event: 'message',\n    phone: `telegram:${chatId}`,\n    chatId,\n    senderId: `telegram:${senderId}`,\n    text: normalizedText,\n    logText: normalizedText,\n    rawPayload: telegramMessage,\n    rawEnvelope: envelope\n  }}];\n}\n\nconst event = envelope.event;\nconst payload = envelope.payload || {};\nif (event !== 'message' || payload.fromMe === true) return [];\n\nconst chatId = String(payload.from || payload.chatId || payload.key?.remoteJid || '').trim();\nif (!chatId || /@g\\.us$/i.test(chatId)) return [];\n\nconst messageText = [\n  payload.body,\n  payload.text?.body,\n  payload.message?.conversation,\n  payload.message?.extendedTextMessage?.text\n].map(asText).find(Boolean) || '';\nif (!messageText) return [];\n\nconst senderId = String(payload.remoteJidAlt || payload._data?.remoteJidAlt || payload._data?.id?.remoteJidAlt || payload.author || payload.participant || payload.key?.participant || chatId).trim();\nconst phone = senderId.replace(/@s\\.whatsapp\\.net$/i, '').replace(/@c\\.us$/i, '').replace(/@lid$/i, '');\nconst normalizedText = String(messageText || '').trim();\n\nreturn [{ json: {\n  channel: 'whatsapp',\n  session: envelope.session || $json.session || 'default',\n  event,\n  phone,\n  chatId,\n  senderId,\n  text: normalizedText,\n  logText: normalizedText,\n  rawPayload: payload,\n  rawEnvelope: envelope\n}}];"
       },
       "id": "chatbot-v2-normalize",
-      "name": "Normalize Chat Message",
+      "name": "Normalizar Mensagem",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -36,7 +36,7 @@
         "jsCode": "function normalizeText(value) {\n  return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\n}\nfunction isOptOut(text) {\n  return new Set(['parar', 'stop', 'descadastrar', 'cancelar cobranca', 'remover meu numero', 'nao enviar', 'nao mande']).has(normalizeText(text));\n}\nfunction shouldShowWelcome(ctx) {\n  const normalized = normalizeText(ctx.text);\n  const directKeywords = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel', 'humano', 'atendente', 'operador', 'suporte'];\n  const greetings = ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'preciso de ajuda', 'quero ajuda', 'quero atendimento'];\n  const hasDirectIntent = Boolean(ctx.document || directKeywords.some((keyword) => normalized.includes(keyword)));\n  return (ctx.conversationState === 'idle' || !ctx.conversationStateFound) && !hasDirectIntent && greetings.some((keyword) => normalized === keyword || normalized.includes(keyword));\n}\nfunction resolveIntent(ctx) {\n  const normalized = normalizeText(ctx.text);\n  const rawText = String(ctx.text || '').trim();\n  const state = ctx.conversationState || 'idle';\n  const activeFlow = ctx.conversationFlow === 'segunda_via_boleto' ? 'segunda_via_boleto' : '';\n  const tokenCount = normalized ? normalized.split(' ').filter(Boolean).length : 0;\n  const menuOption = normalized.match(/^(1|2)$/)?.[1] || '';\n  const documentOnlyMessage = Boolean(ctx.document && /^[\\d\\s.\\-/]+$/.test(rawText) && rawText.length <= 22);\n  const mentionsSecondVia = ['boleto', '2 via', 'segunda via', 'reenviar', 'reenvio', 'linha digitavel'].some((keyword) => normalized.includes(keyword));\n  const requestsHuman = ['humano', 'atendente', 'operador', 'pessoa', 'suporte'].some((keyword) => normalized.includes(keyword));\n  const looksLikeKnowledgeQuery = ['qual', 'quais', 'onde', 'como', 'quando', 'endereco', 'telefone', 'numero', 'email', 'e-mail', 'horario', 'empresa', 'nippon', '?'].some((keyword) => rawText.toLowerCase().includes(keyword) || normalized.includes(keyword)) || tokenCount >= 4;\n\n  if (state === 'awaiting_menu_selection') {\n    if (menuOption === '1') return { route: 'ask_document', intent: 'ask_document', nextFlow: 'segunda_via_boleto', reason: 'menu_option_second_via' };\n    if (menuOption === '2') return { route: 'ask_knowledge', intent: 'ask_knowledge', nextFlow: 'knowledge_base', reason: 'menu_option_other_subject' };\n    if (requestsHuman) return { route: 'knowledge', intent: 'default_operator', nextFlow: '', reason: 'menu_operator' };\n    if (mentionsSecondVia || documentOnlyMessage) return { route: ctx.document ? 'boleto' : 'ask_document', intent: ctx.document ? 'segunda_via_boleto' : 'ask_document', nextFlow: 'segunda_via_boleto', reason: ctx.document ? 'menu_second_via_with_document' : 'menu_second_via_without_document' };\n    if (!looksLikeKnowledgeQuery) return { route: 'welcome', intent: 'show_welcome_menu', nextFlow: '', reason: 'menu_repeat' };\n  }\n\n  if (state === 'awaiting_knowledge_question' && normalized) return { route: 'knowledge', intent: 'knowledge_base_question', nextFlow: '', reason: 'state_awaiting_knowledge_question' };\n  if (requestsHuman || looksLikeKnowledgeQuery) return { route: 'knowledge', intent: requestsHuman ? 'default_operator' : 'knowledge_base_question', nextFlow: '', reason: requestsHuman ? 'handoff_keyword' : 'knowledge_query' };\n  if (documentOnlyMessage) return { route: 'boleto', intent: 'segunda_via_boleto', nextFlow: activeFlow || 'segunda_via_boleto', reason: 'document_only_message' };\n  if (ctx.document && (mentionsSecondVia || state === 'awaiting_document' || activeFlow === 'segunda_via_boleto')) return { route: 'boleto', intent: 'segunda_via_boleto', nextFlow: 'segunda_via_boleto', reason: 'document_with_receivables_context' };\n  if (!ctx.document && (mentionsSecondVia || state === 'awaiting_document' || activeFlow === 'segunda_via_boleto')) return { route: 'ask_document', intent: 'ask_document', nextFlow: 'segunda_via_boleto', reason: 'boleto_keyword_without_document' };\n  return { route: 'knowledge', intent: 'default_operator', nextFlow: '', reason: 'default_operator' };\n}\nlet decision;\nif (isOptOut($json.text)) decision = { route: 'opt_out', intent: 'opt_out', nextFlow: '', reason: 'opt_out_command' };\nelse if (shouldShowWelcome($json)) decision = { route: 'welcome', intent: 'welcome_menu', nextFlow: '', reason: 'welcome_menu' };\nelse decision = resolveIntent($json);\nreturn [{ json: { ...$json, ...decision, resolvedFlow: decision.nextFlow || ($json.conversationFlow === 'segunda_via_boleto' ? 'segunda_via_boleto' : ''), classificationReason: decision.reason } }];"
       },
       "id": "chatbot-v2-resolve-intent",
-      "name": "Resolve Intent",
+      "name": "Resolver Intencao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -69,7 +69,7 @@
         }
       },
       "id": "chatbot-v2-if-opt-out",
-      "name": "If Opt Out",
+      "name": "Rota: Descadastro?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -82,7 +82,7 @@
         "jsCode": "const apiBase = 'http://api:3000/internal/v1';\nasync function post(path, body) {\n  await fetch(apiBase + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });\n}\nawait post('/SetWhatsAppOptOut', { Telefone: $json.phone, OptOut: true, Reason: 'Cliente solicitou bloqueio de cobrancas automaticas no canal de atendimento', Source: 'chatbot', SourceMessage: $json.text });\nawait post('/ClearConversationState', { Telefone: $json.phone });\nreturn [{ json: { ...$json, replyText: 'Entendido. Nao enviaremos novas cobrancas automaticas por este canal. Se quiser retomar no futuro, fale com um operador.', logIntent: 'opt_out' } }];"
       },
       "id": "chatbot-v2-handle-opt-out",
-      "name": "Handle Opt Out",
+      "name": "Processar Descadastro",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -115,7 +115,7 @@
         }
       },
       "id": "chatbot-v2-if-welcome",
-      "name": "If Welcome",
+      "name": "Rota: Boas-Vindas?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -128,7 +128,7 @@
         "jsCode": "const replyText = '\\uD83D\\uDC54 Ol\\u00E1. Bem-vindo ao canal de atendimento da Nippon Elevadores.\\n\\nAtrav\\u00E9s deste menu, podemos auxili\\u00E1-lo com quest\\u00F5es de Contas a Receber. Por gentileza, selecione a op\\u00E7\\u00E3o que melhor atende \\u00E0 sua necessidade no momento:\\n\\n\\uD83D\\uDD38 1. Segunda via de boleto\\n\\uD83D\\uDD38 2. Outros assuntos\\n\\nCaso a sua solicita\\u00E7\\u00E3o demande suporte adicional, um atendente dar\\u00E1 continuidade ao seu atendimento.';\nreturn [{ json: { ...$json, replyText, logIntent: 'welcome_menu' } }];"
       },
       "id": "chatbot-v2-handle-welcome",
-      "name": "Handle Welcome Menu",
+      "name": "Montar Mensagem de Boas-Vindas",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -161,7 +161,7 @@
         }
       },
       "id": "chatbot-v2-if-ask-document",
-      "name": "If Ask Document",
+      "name": "Rota: Pedir Documento?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -174,7 +174,7 @@
         "jsCode": "return [{ json: { ...$json, resolvedFlow: 'segunda_via_boleto', nextFlow: 'segunda_via_boleto', replyText: 'Para localizar seu boleto, por favor informe o CPF ou CNPJ vinculado ao cadastro.', logIntent: 'ask_document' } }];"
       },
       "id": "chatbot-v2-handle-ask-document",
-      "name": "Handle Ask Document",
+      "name": "Pedir CPF ou CNPJ",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -207,7 +207,7 @@
         }
       },
       "id": "chatbot-v2-if-boleto",
-      "name": "If Boleto Flow",
+      "name": "Rota: Boleto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -257,7 +257,7 @@
         "options": {}
       },
       "id": "chatbot-v2-log-inbound",
-      "name": "Log Inbound Chat",
+      "name": "Registrar Mensagem Recebida",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -271,7 +271,7 @@
         "options": {}
       },
       "id": "chatbot-v2-get-config",
-      "name": "Get MVP Config",
+      "name": "Buscar Config MVP",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -287,14 +287,14 @@
           "parameters": [
             {
               "name": "Telefone",
-              "value": "={{$node[\"Normalize Chat Message\"].json.phone}}"
+              "value": "={{$node[\"Normalizar Mensagem\"].json.phone}}"
             }
           ]
         },
         "options": {}
       },
       "id": "chatbot-v2-get-state",
-      "name": "Get Conversation State",
+      "name": "Buscar Estado da Conversa",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -304,10 +304,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const incoming = $item(0).$node[\"Normalize Chat Message\"].json;\nconst config = $item(0).$node[\"Get MVP Config\"].json;\nconst state = $json || {};\nconst digits = String(incoming.text || '').replace(/\\D/g, '');\nconst documentMatch = digits.match(/(\\d{14}|\\d{11})/);\nreturn [\n  {\n    json: {\n      ...incoming,\n      document: documentMatch ? documentMatch[1] : '',\n      fallbackMessage: config.DefaultFallbackMessage || 'Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.',\n      defaultDelayDays: Number(config.DefaultDelayDays || 3),\n      initialMessage: config.InitialWhatsAppMessage,\n      conversationState: state.CurrentState || 'idle',\n      conversationFlow: state.ActiveFlow || '',\n      conversationLastIntent: state.LastIntent || '',\n      conversationContext: state.Context || {},\n      conversationStateFound: Boolean(state.Found),\n      conversationStateExpiresAt: state.ExpiresAt || null,\n      conversationStateTtlHours: Number(config.ConversationStateTtlHours || 12)\n    }\n  }\n];"
+        "jsCode": "const incoming = $item(0).$node[\"Normalizar Mensagem\"].json;\nconst config = $item(0).$node[\"Buscar Config MVP\"].json;\nconst state = $json || {};\nconst digits = String(incoming.text || '').replace(/\\D/g, '');\nconst documentMatch = digits.match(/(\\d{14}|\\d{11})/);\nreturn [\n  {\n    json: {\n      ...incoming,\n      document: documentMatch ? documentMatch[1] : '',\n      fallbackMessage: config.DefaultFallbackMessage || 'Recebemos sua mensagem e em breve um operador do contas a receber dara continuidade ao atendimento.',\n      defaultDelayDays: Number(config.DefaultDelayDays || 3),\n      initialMessage: config.InitialWhatsAppMessage,\n      conversationState: state.CurrentState || 'idle',\n      conversationFlow: state.ActiveFlow || '',\n      conversationLastIntent: state.LastIntent || '',\n      conversationContext: state.Context || {},\n      conversationStateFound: Boolean(state.Found),\n      conversationStateExpiresAt: state.ExpiresAt || null,\n      conversationStateTtlHours: Number(config.ConversationStateTtlHours || 12)\n    }\n  }\n];"
       },
       "id": "chatbot-v2-merge-context",
-      "name": "Merge Chat Context",
+      "name": "Montar Contexto da Conversa",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -325,7 +325,7 @@
         "options": {}
       },
       "id": "chatbot-v2-set-awaiting-menu",
-      "name": "Set Awaiting Menu State",
+      "name": "Definir Estado Aguardando Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -356,7 +356,7 @@
         "options": {}
       },
       "id": "chatbot-v2-send-whatsapp",
-      "name": "Send Chat Reply",
+      "name": "Enviar Resposta",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -374,7 +374,7 @@
         "options": {}
       },
       "id": "chatbot-v2-log-outbound",
-      "name": "Log Outbound Chat",
+      "name": "Registrar Resposta Enviada",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -392,7 +392,7 @@
         "options": {}
       },
       "id": "chatbot-v2-set-awaiting-document",
-      "name": "Set Awaiting Document State",
+      "name": "Definir Estado Aguardando Documento",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -423,7 +423,7 @@
         "options": {}
       },
       "id": "chatbot-v2-validate-document-phone",
-      "name": "Validate Document And Phone",
+      "name": "Validar Documento e Telefone",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -456,7 +456,7 @@
         }
       },
       "id": "chatbot-v2-if-validation-ok",
-      "name": "If Validation OK",
+      "name": "Documento e Telefone Validos?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -466,10 +466,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nreturn [{ json: { ...context, replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.', logIntent: 'segunda_via_boleto' } }];"
+        "jsCode": "const context = $item(0).$node[\"Montar Contexto da Conversa\"].json;\nreturn [{ json: { ...context, replyText: 'Nao consegui validar o CPF/CNPJ com o telefone desta conversa. Por favor, revise os dados ou aguarde atendimento humano.', logIntent: 'segunda_via_boleto' } }];"
       },
       "id": "chatbot-v2-build-validation-error",
-      "name": "Build Validation Error Reply",
+      "name": "Montar Erro de Validacao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -485,7 +485,7 @@
           "parameters": [
             {
               "name": "Cprf",
-              "value": "={{$node[\"Merge Chat Context\"].json.document}}"
+              "value": "={{$node[\"Montar Contexto da Conversa\"].json.document}}"
             },
             {
               "name": "TenantId",
@@ -496,7 +496,7 @@
         "options": {}
       },
       "id": "chatbot-v2-get-boleto-document",
-      "name": "Get Boleto By Document",
+      "name": "Buscar Boleto por Documento",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -506,10 +506,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [{ json: { ...context, canUpdate: false, replyText: 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.', logIntent: 'segunda_via_boleto' } }];\n}\nreturn [{ json: { ...context, resolvedFlow: 'segunda_via_boleto', canUpdate: true, boletoId: boleto.Identificador, tenantId: 1, currentDueDate: boleto.Vencimento, linhaDigitavel: boleto.LinhaDigitavel, logIntent: 'segunda_via_boleto' } }];"
+        "jsCode": "const context = $item(0).$node[\"Montar Contexto da Conversa\"].json;\nconst boletos = $json.Boletos || [];\nconst boleto = boletos[0];\nif (!boleto) {\n  return [{ json: { ...context, canUpdate: false, replyText: 'Nao localizamos um boleto para reenvio neste momento. Em breve um operador dara continuidade ao atendimento.', logIntent: 'segunda_via_boleto' } }];\n}\nreturn [{ json: { ...context, resolvedFlow: 'segunda_via_boleto', canUpdate: true, boletoId: boleto.Identificador, tenantId: 1, currentDueDate: boleto.Vencimento, linhaDigitavel: boleto.LinhaDigitavel, logIntent: 'segunda_via_boleto' } }];"
       },
       "id": "chatbot-v2-prepare-boleto-reply",
-      "name": "Prepare Boleto Reply",
+      "name": "Preparar Resposta do Boleto",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -543,7 +543,7 @@
         }
       },
       "id": "chatbot-v2-if-can-update",
-      "name": "If Can Update",
+      "name": "Boleto Encontrado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -553,10 +553,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Prepare Boleto Reply\"].json;\nconst closingText = 'Agradecemos o seu contato com a Nippon Elevadores. Este atendimento foi encerrado. Se precisar, estamos a disposicao.';\nconst replyText = 'Localizamos seu boleto. Linha digitavel: ' + context.linhaDigitavel + '\\n\\n' + closingText;\nreturn [{ json: { ...context, replyText, logIntent: 'segunda_via_boleto' } }];"
+        "jsCode": "const context = $item(0).$node[\"Preparar Resposta do Boleto\"].json;\nconst closingText = 'Agradecemos o seu contato com a Nippon Elevadores. Este atendimento foi encerrado. Se precisar, estamos a disposicao.';\nconst replyText = 'Localizamos seu boleto. Linha digitavel: ' + context.linhaDigitavel + '\\n\\n' + closingText;\nreturn [{ json: { ...context, replyText, logIntent: 'segunda_via_boleto' } }];"
       },
       "id": "chatbot-v2-build-success",
-      "name": "Build Success Reply",
+      "name": "Montar Resposta de Sucesso",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -574,7 +574,7 @@
         "options": {}
       },
       "id": "chatbot-v2-clear-state",
-      "name": "Clear Conversation State",
+      "name": "Limpar Estado da Conversa",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -592,7 +592,7 @@
         "options": {}
       },
       "id": "chatbot-v2-query-kb",
-      "name": "Query Knowledge Base",
+      "name": "Consultar Base de Conhecimento",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -626,7 +626,7 @@
         }
       },
       "id": "chatbot-v2-if-kb-found",
-      "name": "If KB Answer Found",
+      "name": "Resposta Encontrada na Base?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -636,10 +636,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst answer = $json.knowledgeBaseAnswer || $json.Answer || '';\nreturn [{ json: { ...context, replyText: answer, logIntent: 'knowledge_base_answer', classificationReason: 'knowledge_base_answer' } }];"
+        "jsCode": "const context = $item(0).$node[\"Montar Contexto da Conversa\"].json;\nconst answer = $json.knowledgeBaseAnswer || $json.Answer || '';\nreturn [{ json: { ...context, replyText: answer, logIntent: 'knowledge_base_answer', classificationReason: 'knowledge_base_answer' } }];"
       },
       "id": "chatbot-v2-build-kb-reply",
-      "name": "Build KB Reply",
+      "name": "Montar Resposta da Base",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -649,10 +649,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Merge Chat Context\"].json;\nconst fallbackMessage = context.fallbackMessage || 'Nao encontrei essa informacao na base de conhecimento agora. Vou encaminhar seu atendimento para um operador.';\nreturn [{ json: { ...context, replyText: fallbackMessage, logIntent: 'default_operator' } }];"
+        "jsCode": "const context = $item(0).$node[\"Montar Contexto da Conversa\"].json;\nconst fallbackMessage = context.fallbackMessage || 'Nao encontrei essa informacao na base de conhecimento agora. Vou encaminhar seu atendimento para um operador.';\nreturn [{ json: { ...context, replyText: fallbackMessage, logIntent: 'default_operator' } }];"
       },
       "id": "chatbot-v2-build-fallback",
-      "name": "Build Fallback Reply",
+      "name": "Montar Resposta de Encaminhamento",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -685,7 +685,7 @@
         }
       },
       "id": "chatbot-v2-if-ask-knowledge",
-      "name": "If Ask Knowledge Question",
+      "name": "Rota: Outro Assunto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -698,7 +698,7 @@
         "jsCode": "return [{ json: { ...$json, replyText: 'Claro. Me envie sua pergunta ou descreva o assunto para eu consultar a base de conhecimento da Nippon.', logIntent: 'ask_knowledge_question' } }];"
       },
       "id": "chatbot-v2-handle-ask-knowledge",
-      "name": "Handle Ask Knowledge Question",
+      "name": "Pedir Pergunta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -716,7 +716,7 @@
         "options": {}
       },
       "id": "chatbot-v2-set-awaiting-knowledge",
-      "name": "Set Awaiting Knowledge State",
+      "name": "Definir Estado Aguardando Pergunta",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -732,7 +732,7 @@
         "options": {}
       },
       "id": "chatbot-v2-telegram-webhook",
-      "name": "Telegram Webhook",
+      "name": "Webhook Telegram",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -766,7 +766,7 @@
         }
       },
       "id": "chatbot-v2-if-telegram-channel",
-      "name": "If Telegram Channel",
+      "name": "Canal e Telegram?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -779,7 +779,7 @@
         "jsCode": "return [{ json: {\n  CprfValido: true,\n  TelefoneValido: true,\n  ValidationSkipped: true,\n  ValidationChannel: 'telegram',\n  Message: 'Validacao de CPF/CNPJ com telefone desativada temporariamente para Telegram.'\n} }];"
       },
       "id": "chatbot-v2-build-telegram-validation-ok",
-      "name": "Build Telegram Validation OK",
+      "name": "Pular Validacao (Telegram)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -790,501 +790,501 @@
   ],
   "pinData": {},
   "connections": {
-    "WAHA Webhook": {
+    "Webhook WAHA": {
       "main": [
         [
           {
-            "node": "Normalize Chat Message",
+            "node": "Normalizar Mensagem",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Normalize Chat Message": {
+    "Normalizar Mensagem": {
       "main": [
         [
           {
-            "node": "Log Inbound Chat",
+            "node": "Registrar Mensagem Recebida",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Inbound Chat": {
+    "Registrar Mensagem Recebida": {
       "main": [
         [
           {
-            "node": "Get MVP Config",
+            "node": "Buscar Config MVP",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get MVP Config": {
+    "Buscar Config MVP": {
       "main": [
         [
           {
-            "node": "Get Conversation State",
+            "node": "Buscar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Conversation State": {
+    "Buscar Estado da Conversa": {
       "main": [
         [
           {
-            "node": "Merge Chat Context",
+            "node": "Montar Contexto da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge Chat Context": {
+    "Montar Contexto da Conversa": {
       "main": [
         [
           {
-            "node": "Resolve Intent",
+            "node": "Resolver Intencao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Resolve Intent": {
+    "Resolver Intencao": {
       "main": [
         [
           {
-            "node": "If Opt Out",
+            "node": "Rota: Descadastro?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Opt Out": {
+    "Rota: Descadastro?": {
       "main": [
         [
           {
-            "node": "Handle Opt Out",
+            "node": "Processar Descadastro",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "If Welcome",
+            "node": "Rota: Boas-Vindas?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Handle Opt Out": {
+    "Processar Descadastro": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Welcome": {
+    "Rota: Boas-Vindas?": {
       "main": [
         [
           {
-            "node": "Handle Welcome Menu",
+            "node": "Montar Mensagem de Boas-Vindas",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "If Ask Document",
+            "node": "Rota: Pedir Documento?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Handle Welcome Menu": {
+    "Montar Mensagem de Boas-Vindas": {
       "main": [
         [
           {
-            "node": "Set Awaiting Menu State",
+            "node": "Definir Estado Aguardando Menu",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Set Awaiting Menu State": {
+    "Definir Estado Aguardando Menu": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Ask Document": {
+    "Rota: Pedir Documento?": {
       "main": [
         [
           {
-            "node": "Handle Ask Document",
+            "node": "Pedir CPF ou CNPJ",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "If Ask Knowledge Question",
+            "node": "Rota: Outro Assunto?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Handle Ask Document": {
+    "Pedir CPF ou CNPJ": {
       "main": [
         [
           {
-            "node": "Set Awaiting Document State",
+            "node": "Definir Estado Aguardando Documento",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Set Awaiting Document State": {
+    "Definir Estado Aguardando Documento": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Boleto Flow": {
+    "Rota: Boleto?": {
       "main": [
         [
           {
-            "node": "If Telegram Channel",
+            "node": "Canal e Telegram?",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Query Knowledge Base",
+            "node": "Consultar Base de Conhecimento",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Validate Document And Phone": {
+    "Validar Documento e Telefone": {
       "main": [
         [
           {
-            "node": "If Validation OK",
+            "node": "Documento e Telefone Validos?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Validation OK": {
+    "Documento e Telefone Validos?": {
       "main": [
         [
           {
-            "node": "Get Boleto By Document",
+            "node": "Buscar Boleto por Documento",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Build Validation Error Reply",
+            "node": "Montar Erro de Validacao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Validation Error Reply": {
+    "Montar Erro de Validacao": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Clear Conversation State",
+            "node": "Limpar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Boleto By Document": {
+    "Buscar Boleto por Documento": {
       "main": [
         [
           {
-            "node": "Prepare Boleto Reply",
+            "node": "Preparar Resposta do Boleto",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Can Update": {
+    "Boleto Encontrado?": {
       "main": [
         [
           {
-            "node": "Build Success Reply",
+            "node": "Montar Resposta de Sucesso",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Clear Conversation State",
+            "node": "Limpar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Success Reply": {
+    "Montar Resposta de Sucesso": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Clear Conversation State",
+            "node": "Limpar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Query Knowledge Base": {
+    "Consultar Base de Conhecimento": {
       "main": [
         [
           {
-            "node": "If KB Answer Found",
+            "node": "Resposta Encontrada na Base?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If KB Answer Found": {
+    "Resposta Encontrada na Base?": {
       "main": [
         [
           {
-            "node": "Build KB Reply",
+            "node": "Montar Resposta da Base",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Build Fallback Reply",
+            "node": "Montar Resposta de Encaminhamento",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build KB Reply": {
+    "Montar Resposta da Base": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Clear Conversation State",
+            "node": "Limpar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Fallback Reply": {
+    "Montar Resposta de Encaminhamento": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Clear Conversation State",
+            "node": "Limpar Estado da Conversa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Clear Conversation State": {
+    "Limpar Estado da Conversa": {
       "main": [
         []
       ]
     },
-    "If Ask Knowledge Question": {
+    "Rota: Outro Assunto?": {
       "main": [
         [
           {
-            "node": "Handle Ask Knowledge Question",
+            "node": "Pedir Pergunta",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "If Boleto Flow",
+            "node": "Rota: Boleto?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Handle Ask Knowledge Question": {
+    "Pedir Pergunta": {
       "main": [
         [
           {
-            "node": "Set Awaiting Knowledge State",
+            "node": "Definir Estado Aguardando Pergunta",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Set Awaiting Knowledge State": {
+    "Definir Estado Aguardando Pergunta": {
       "main": [
         [
           {
-            "node": "Send Chat Reply",
+            "node": "Enviar Resposta",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Log Outbound Chat",
+            "node": "Registrar Resposta Enviada",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Boleto Reply": {
+    "Preparar Resposta do Boleto": {
       "main": [
         [
           {
-            "node": "If Can Update",
+            "node": "Boleto Encontrado?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Telegram Webhook": {
+    "Webhook Telegram": {
       "main": [
         [
           {
-            "node": "Normalize Chat Message",
+            "node": "Normalizar Mensagem",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Telegram Channel": {
+    "Canal e Telegram?": {
       "main": [
         [
           {
-            "node": "Build Telegram Validation OK",
+            "node": "Pular Validacao (Telegram)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Validate Document And Phone",
+            "node": "Validar Documento e Telefone",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Telegram Validation OK": {
+    "Pular Validacao (Telegram)": {
       "main": [
         [
           {
-            "node": "If Validation OK",
+            "node": "Documento e Telefone Validos?",
             "type": "main",
             "index": 0
           }

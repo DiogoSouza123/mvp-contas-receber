@@ -14,7 +14,7 @@
         }
       },
       "id": "0c7d88ae-7ec9-4e86-a4f5-3eb88c431001",
-      "name": "Cron 08h",
+      "name": "Disparo Diario 08h",
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
       "position": [
@@ -30,7 +30,7 @@
         "options": {}
       },
       "id": "fb2b9d0a-2d57-4955-bc89-4edc64459002",
-      "name": "Get MVP Config",
+      "name": "Buscar Config MVP",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -45,7 +45,7 @@
         "jsCode": "const today = new Date();\nconst finalDate = new Date(today);\nfinalDate.setDate(finalDate.getDate() - 5);\nconst initialDate = new Date(today);\ninitialDate.setDate(initialDate.getDate() - 90);\nconst format = (value) => value.toISOString().slice(0, 10);\nreturn [\n  {\n    json: {\n      key: 'demo',\n      tenantId: 1,\n      dataInicial: format(initialDate),\n      dataFinal: format(finalDate),\n      initialMessage: $json.InitialWhatsAppMessage,\n      fallbackMessage: $json.DefaultFallbackMessage\n    }\n  }\n];"
       },
       "id": "6bd43fcb-36ee-44c2-8a86-90d7f28ff003",
-      "name": "Build Date Window",
+      "name": "Montar Janela de Datas",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -78,7 +78,7 @@
         "options": {}
       },
       "id": "8d88f593-fa45-4df6-9a97-f6aef2e83004",
-      "name": "Get Overdue Accounts",
+      "name": "Buscar Contas Vencidas",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -90,10 +90,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const settings = $item(0).$node[\"Build Date Window\"].json;\nconst accounts = ($json.Dados || []).filter((entry) => entry.Conta?.Situacao === 'EmAberto');\nreturn accounts.map((entry) => ({\n  json: {\n    key: settings.key,\n    tenantId: settings.tenantId,\n    initialMessage: settings.initialMessage,\n    contaId: entry.Conta.Id,\n    clienteId: entry.Pagador.Id,\n    clienteNome: entry.Pagador.Nome,\n    cprf: entry.Pagador.Cnpj || entry.Pagador.Cpf,\n    vencimento: entry.Conta.DataVencimento,\n    total: entry.Conta.Total,\n    historico: entry.Conta.Historico,\n    documento: entry.Conta.Documento,\n    situacao: entry.Conta.Situacao\n  }\n}));"
+        "jsCode": "const settings = $item(0).$node[\"Montar Janela de Datas\"].json;\nconst accounts = ($json.Dados || []).filter((entry) => entry.Conta?.Situacao === 'EmAberto');\nreturn accounts.map((entry) => ({\n  json: {\n    key: settings.key,\n    tenantId: settings.tenantId,\n    initialMessage: settings.initialMessage,\n    contaId: entry.Conta.Id,\n    clienteId: entry.Pagador.Id,\n    clienteNome: entry.Pagador.Nome,\n    cprf: entry.Pagador.Cnpj || entry.Pagador.Cpf,\n    vencimento: entry.Conta.DataVencimento,\n    total: entry.Conta.Total,\n    historico: entry.Conta.Historico,\n    documento: entry.Conta.Documento,\n    situacao: entry.Conta.Situacao\n  }\n}));"
       },
       "id": "f1dcb06f-e8cb-4ac2-92dd-57cb27c47005",
-      "name": "Expand Overdue Accounts",
+      "name": "Expandir Contas Vencidas",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -122,7 +122,7 @@
         "options": {}
       },
       "id": "2cdfefb4-c47a-4b2a-991d-1d58dd1fe006",
-      "name": "Get Client Contacts",
+      "name": "Buscar Contatos do Cliente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -140,18 +140,18 @@
           "parameters": [
             {
               "name": "Cprf",
-              "value": "={{$node[\"Expand Overdue Accounts\"].json.cprf}}"
+              "value": "={{$node[\"Expandir Contas Vencidas\"].json.cprf}}"
             },
             {
               "name": "TenantId",
-              "value": "={{$node[\"Expand Overdue Accounts\"].json.tenantId}}"
+              "value": "={{$node[\"Expandir Contas Vencidas\"].json.tenantId}}"
             }
           ]
         },
         "options": {}
       },
       "id": "22b44377-4361-4c60-b3f5-51b54bcae007",
-      "name": "Get Boleto By Cprf",
+      "name": "Buscar Boleto por CPF/CNPJ",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -163,10 +163,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const boletoItems = $input.all();\nconst accountItems = $items('Expand Overdue Accounts');\nconst contactItems = $items('Get Client Contacts');\nconst charges = [];\n\nfor (let index = 0; index < boletoItems.length; index += 1) {\n  const account = accountItems[index]?.json;\n  const contactsResponse = contactItems[index]?.json || {};\n  if (!account) continue;\n\n  const contacts = contactsResponse.Contatos || [];\n  const defaultContact = contacts[0];\n  const phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\n  if (!phone) continue;\n\n  const boletos = boletoItems[index].json.Boletos || [];\n  const boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\n  if (!boleto) continue;\n\n  const amount = Number(account.total || 0).toFixed(2).replace('.', ',');\n  const chatId = phone.includes('@') ? phone : phone + '@c.us';\n  const text = account.initialMessage + '\\nCliente: ' + account.clienteNome + '\\nDocumento: ' + account.documento + '\\nVencimento: ' + account.vencimento + '\\nValor: R$ ' + amount + '\\nLinha digitavel: ' + boleto.LinhaDigitavel;\n\n  charges.push({\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text,\n    },\n    pairedItem: { item: index },\n  });\n}\n\nreturn charges;"
+        "jsCode": "const boletoItems = $input.all();\nconst accountItems = $items('Expandir Contas Vencidas');\nconst contactItems = $items('Buscar Contatos do Cliente');\nconst charges = [];\n\nfor (let index = 0; index < boletoItems.length; index += 1) {\n  const account = accountItems[index]?.json;\n  const contactsResponse = contactItems[index]?.json || {};\n  if (!account) continue;\n\n  const contacts = contactsResponse.Contatos || [];\n  const defaultContact = contacts[0];\n  const phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\n  if (!phone) continue;\n\n  const boletos = boletoItems[index].json.Boletos || [];\n  const boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\n  if (!boleto) continue;\n\n  const amount = Number(account.total || 0).toFixed(2).replace('.', ',');\n  const chatId = phone.includes('@') ? phone : phone + '@c.us';\n  const text = account.initialMessage + '\\nCliente: ' + account.clienteNome + '\\nDocumento: ' + account.documento + '\\nVencimento: ' + account.vencimento + '\\nValor: R$ ' + amount + '\\nLinha digitavel: ' + boleto.LinhaDigitavel;\n\n  charges.push({\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text,\n    },\n    pairedItem: { item: index },\n  });\n}\n\nreturn charges;"
       },
       "id": "b34c31a0-1fd4-4eff-b8fd-bd45f6db5008",
-      "name": "Prepare WhatsApp Charge",
+      "name": "Preparar Cobranca WhatsApp",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -186,7 +186,7 @@
         "options": {}
       },
       "id": "4ec94f94-cdc2-4431-922e-a80e3d391008",
-      "name": "Check Send Policy",
+      "name": "Verificar Politica de Envio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -221,7 +221,7 @@
         }
       },
       "id": "bc1b48b1-1a69-41bd-820d-e2ea15924009",
-      "name": "If Policy Allows",
+      "name": "Envio Permitido?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -250,11 +250,11 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ session: 'default', chatId: $node[\"Prepare WhatsApp Charge\"].json.chatId, text: $node[\"Prepare WhatsApp Charge\"].json.text }) }}",
+        "jsonBody": "={{ JSON.stringify({ session: 'default', chatId: $node[\"Preparar Cobranca WhatsApp\"].json.chatId, text: $node[\"Preparar Cobranca WhatsApp\"].json.text }) }}",
         "options": {}
       },
       "id": "5e4e8ab8-375d-42c6-9542-e43b5b4da009",
-      "name": "Send WhatsApp Charge",
+      "name": "Enviar Cobranca WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -273,21 +273,21 @@
           "parameters": [
             {
               "name": "BoletoId",
-              "value": "={{$node[\"Prepare WhatsApp Charge\"].json.boletoId}}"
+              "value": "={{$node[\"Preparar Cobranca WhatsApp\"].json.boletoId}}"
             },
             {
               "name": "TenantId",
-              "value": "={{$node[\"Prepare WhatsApp Charge\"].json.tenantId}}"
+              "value": "={{$node[\"Preparar Cobranca WhatsApp\"].json.tenantId}}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Prepare WhatsApp Charge\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
+        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Preparar Cobranca WhatsApp\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
         "options": {}
       },
       "id": "8a365ef5-97b8-4c8d-8b82-81d23849f010",
-      "name": "Register WhatsApp Status",
+      "name": "Registrar Status do Envio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -363,110 +363,110 @@
     }
   ],
   "connections": {
-    "Cron 08h": {
+    "Disparo Diario 08h": {
       "main": [
         [
           {
-            "node": "Get MVP Config",
+            "node": "Buscar Config MVP",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get MVP Config": {
+    "Buscar Config MVP": {
       "main": [
         [
           {
-            "node": "Build Date Window",
+            "node": "Montar Janela de Datas",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Date Window": {
+    "Montar Janela de Datas": {
       "main": [
         [
           {
-            "node": "Get Overdue Accounts",
+            "node": "Buscar Contas Vencidas",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Overdue Accounts": {
+    "Buscar Contas Vencidas": {
       "main": [
         [
           {
-            "node": "Expand Overdue Accounts",
+            "node": "Expandir Contas Vencidas",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Expand Overdue Accounts": {
+    "Expandir Contas Vencidas": {
       "main": [
         [
           {
-            "node": "Get Client Contacts",
+            "node": "Buscar Contatos do Cliente",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Client Contacts": {
+    "Buscar Contatos do Cliente": {
       "main": [
         [
           {
-            "node": "Get Boleto By Cprf",
+            "node": "Buscar Boleto por CPF/CNPJ",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Boleto By Cprf": {
+    "Buscar Boleto por CPF/CNPJ": {
       "main": [
         [
           {
-            "node": "Prepare WhatsApp Charge",
+            "node": "Preparar Cobranca WhatsApp",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare WhatsApp Charge": {
+    "Preparar Cobranca WhatsApp": {
       "main": [
         [
           {
-            "node": "Check Send Policy",
+            "node": "Verificar Politica de Envio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Send Policy": {
+    "Verificar Politica de Envio": {
       "main": [
         [
           {
-            "node": "If Policy Allows",
+            "node": "Envio Permitido?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Policy Allows": {
+    "Envio Permitido?": {
       "main": [
         [
           {
-            "node": "Send WhatsApp Charge",
+            "node": "Enviar Cobranca WhatsApp",
             "type": "main",
             "index": 0
           }
@@ -474,11 +474,11 @@
         []
       ]
     },
-    "Send WhatsApp Charge": {
+    "Enviar Cobranca WhatsApp": {
       "main": [
         [
           {
-            "node": "Register WhatsApp Status",
+            "node": "Registrar Status do Envio",
             "type": "main",
             "index": 0
           }
