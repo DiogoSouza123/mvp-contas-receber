@@ -51,7 +51,7 @@
         20
       ],
       "parameters": {
-        "content": "## Reconciliacao de pagamentos\n\nCompara os titulos em cobranca_acompanhamento contra a mesma janela de vencimento usada pela cobranca diaria (5 a 90 dias). Quem sai dessa janela e considerado resolvido, e tem situacao marcada como Pago.\n\n### Limitacao conhecida\nSem um ERP real informando pagamento, um titulo que passe de 90 dias sem pagar tambem sai da janela e seria marcado como pago incorretamente. Risco aceito enquanto nao houver integracao real de pagamento.",
+        "content": "## Reconciliacao de pagamentos\n\nCompara os titulos em cobranca_acompanhamento contra uma janela de vencimento propria (5 a 365 dias) - mais larga que a da cobranca diaria (5 a 90 dias) de proposito. Quem sai dessa janela e considerado resolvido, e tem situacao marcada como Pago.\n\n### Limitacao conhecida\nSem um ERP real informando pagamento, um titulo que passe de 365 dias sem pagar tambem sai da janela e seria marcado como pago incorretamente. Risco bem mais raro que antes (era 90 dias), mas ainda existe enquanto nao houver integracao real de pagamento.",
         "width": 620,
         "height": 240,
         "color": 5

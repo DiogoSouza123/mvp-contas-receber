@@ -807,20 +807,22 @@ router.post('/ReconciliarPagamentos', async (req, res, next) => {
 
     const trackedIds = tracked.rows.map((row) => Number(row.conta_receber_id));
 
-    // Mesma janela usada pela cobranca diaria (Montar Janela de Datas em
-    // cobranca-diaria.json): vencimento entre 90 e 5 dias atras. Um titulo
-    // rastreado que sai dessa janela e considerado resolvido — por baixa real
-    // (situacao mudou) ou por envelhecer alem de 90 dias sem pagar. Essa
-    // segunda hipotese e um falso positivo aceito (decisao registrada no
-    // plano de implementacao), ja que hoje nao ha sinal de pagamento real do
-    // ERP para diferenciar os dois casos.
+    // Janela DIFERENTE da cobranca diaria de proposito (essa usa 5-90 dias
+    // para decidir quem cobrar hoje; aqui usamos uma janela muito mais larga,
+    // 5-365 dias, so para decidir se um titulo rastreado "desapareceu" e deve
+    // ser considerado pago por ausencia). Isso reduz bastante o falso
+    // positivo de marcar como pago um titulo que so envelheceu alem de 90
+    // dias sem pagar — ele continua tratado como em_cobranca (so para de ser
+    // cobrado ativamente pela rotina diaria) ate passar de 365 dias ou ter a
+    // situacao alterada por outro meio. O risco de falso positivo nao
+    // desaparece (>365 dias ainda cai nesse caso), so fica bem mais raro.
     const stillInWindow = await db.query(
       `
         SELECT id
         FROM contas_receber
         WHERE id = ANY($1::bigint[])
           AND situacao = 'EmAberto'
-          AND data_vencimento BETWEEN CURRENT_DATE - INTERVAL '90 days' AND CURRENT_DATE - INTERVAL '5 days'
+          AND data_vencimento BETWEEN CURRENT_DATE - INTERVAL '365 days' AND CURRENT_DATE - INTERVAL '5 days'
       `,
       [trackedIds]
     );
