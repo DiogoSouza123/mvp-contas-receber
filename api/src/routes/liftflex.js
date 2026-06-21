@@ -266,7 +266,13 @@ router.get('/GetBoletoByCprf', async (req, res, next) => {
     }
 
     const result = await db.query(
-      'SELECT * FROM boletos WHERE cprf = $1 AND tenant_id = $2 ORDER BY vencimento ASC',
+      `
+        SELECT b.*
+        FROM boletos b
+        INNER JOIN contas_receber cr ON cr.id = b.conta_receber_id
+        WHERE b.cprf = $1 AND b.tenant_id = $2 AND cr.situacao = 'EmAberto'
+        ORDER BY b.vencimento ASC
+      `,
       [Cprf, TenantId]
     );
 

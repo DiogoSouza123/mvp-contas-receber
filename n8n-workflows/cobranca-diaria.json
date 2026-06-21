@@ -298,6 +298,26 @@
       "notesInFlow": true
     },
     {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/internal/v1/RegistrarAcompanhamentoCobranca",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ContaReceberId: $node[\"Preparar Cobranca WhatsApp\"].json.contaId, ClienteId: $node[\"Preparar Cobranca WhatsApp\"].json.clienteId, TenantId: $node[\"Preparar Cobranca WhatsApp\"].json.tenantId }) }}",
+        "options": {}
+      },
+      "id": "b1a2c3d4-5e6f-4789-9abc-def012345678",
+      "name": "Registrar Acompanhamento de Cobranca",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2820,
+        380
+      ],
+      "notes": "Marca o titulo como em cobranca ativa, usado depois pela reconciliacao de pagamentos para inferir baixa por ausencia.",
+      "notesInFlow": true
+    },
+    {
       "id": "5556c496-3b62-434c-9b26-b042d3a7e730",
       "name": "Nota Geral - Cobranca Diaria",
       "type": "n8n-nodes-base.stickyNote",
@@ -479,6 +499,11 @@
         [
           {
             "node": "Registrar Status do Envio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Registrar Acompanhamento de Cobranca",
             "type": "main",
             "index": 0
           }

@@ -611,6 +611,125 @@ router.post('/SetWhatsAppOptOut', async (req, res, next) => {
   }
 });
 
+router.post('/RegistrarAcompanhamentoCobranca', async (req, res, next) => {
+  try {
+    const { ContaReceberId, ClienteId, TenantId = 1 } = req.body || {};
+
+    if (!ContaReceberId || !ClienteId) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'ContaReceberId e ClienteId sao obrigatorios.',
+      });
+    }
+
+    await db.query(
+      `
+        INSERT INTO cobranca_acompanhamento (conta_receber_id, tenant_id, cliente_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (conta_receber_id) DO NOTHING
+      `,
+      [ContaReceberId, TenantId, ClienteId]
+    );
+
+    return res.json({ Success: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/ReconciliarPagamentos', async (req, res, next) => {
+  try {
+    const tracked = await db.query(
+      `
+        SELECT conta_receber_id, cliente_id
+        FROM cobranca_acompanhamento
+        WHERE status = 'em_cobranca'
+      `
+    );
+
+    if (tracked.rowCount === 0) {
+      return res.json({ Success: true, Verificados: 0, BaixasAplicadas: 0 });
+    }
+
+    const trackedIds = tracked.rows.map((row) => Number(row.conta_receber_id));
+
+    // Mesma janela usada pela cobranca diaria (Montar Janela de Datas em
+    // cobranca-diaria.json): vencimento entre 90 e 5 dias atras. Um titulo
+    // rastreado que sai dessa janela e considerado resolvido — por baixa real
+    // (situacao mudou) ou por envelhecer alem de 90 dias sem pagar. Essa
+    // segunda hipotese e um falso positivo aceito (decisao registrada no
+    // plano de implementacao), ja que hoje nao ha sinal de pagamento real do
+    // ERP para diferenciar os dois casos.
+    const stillInWindow = await db.query(
+      `
+        SELECT id
+        FROM contas_receber
+        WHERE id = ANY($1::bigint[])
+          AND situacao = 'EmAberto'
+          AND data_vencimento BETWEEN CURRENT_DATE - INTERVAL '90 days' AND CURRENT_DATE - INTERVAL '5 days'
+      `,
+      [trackedIds]
+    );
+    const stillInWindowIds = new Set(stillInWindow.rows.map((row) => Number(row.id)));
+
+    let baixasAplicadas = 0;
+
+    for (const row of tracked.rows) {
+      const contaReceberId = Number(row.conta_receber_id);
+
+      await db.query(
+        `UPDATE cobranca_acompanhamento SET ultima_verificacao_em = NOW() WHERE conta_receber_id = $1`,
+        [contaReceberId]
+      );
+
+      if (stillInWindowIds.has(contaReceberId)) {
+        continue;
+      }
+
+      const updateResult = await db.query(
+        `
+          UPDATE contas_receber
+          SET situacao = 'Pago',
+              valor_pago = total,
+              data_pagamento = CURRENT_DATE
+          WHERE id = $1 AND situacao = 'EmAberto'
+          RETURNING id
+        `,
+        [contaReceberId]
+      );
+
+      await db.query(
+        `UPDATE cobranca_acompanhamento SET status = 'baixado_por_ausencia' WHERE conta_receber_id = $1`,
+        [contaReceberId]
+      );
+
+      if (updateResult.rowCount > 0) {
+        baixasAplicadas += 1;
+
+        await db.query(
+          `
+            INSERT INTO atendimentos_chat (cliente_id, telefone, role, message, intent, channel, metadata)
+            VALUES ($1, '', 'system', $2, 'baixa_inferida', 'sistema', $3::jsonb)
+          `,
+          [
+            row.cliente_id,
+            `Baixa de pagamento inferida automaticamente para o titulo ${contaReceberId}: saiu da janela de cobranca sem confirmacao de pagamento real do ERP.`,
+            JSON.stringify({ contaReceberId, metodo: 'reconciliacao_por_ausencia' }),
+          ]
+        );
+      }
+    }
+
+    return res.json({
+      Success: true,
+      Verificados: tracked.rowCount,
+      BaixasAplicadas: baixasAplicadas,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/ChatbotLog', async (req, res, next) => {
   try {
     const {
