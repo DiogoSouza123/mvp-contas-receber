@@ -209,13 +209,15 @@ Invoke-RestMethod -Uri 'http://localhost:3001/api/sessions/default' -Headers @{ 
 
 ## Endpoints da API
 
-Base path:
+A API expõe dois grupos de rotas, com base paths diferentes:
+
+### Mock do contrato real do Liftflex
 
 ```text
 /Liftflex_API/rest/v2
 ```
 
-Endpoints principais:
+Replica o contrato documentado em [liftflexSwagger.json](liftflexSwagger.json). Implementado em [api/src/routes/liftflex.js](api/src/routes/liftflex.js).
 
 - `GET /GetContasReceberByVencimento`
 - `GET /GetContasReceberById`
@@ -224,6 +226,15 @@ Endpoints principais:
 - `GET /GetBoletoByCprf`
 - `GET /ValidarCprfTelefone`
 - `POST /UpdateWhatsAppBoletoMessage`
+
+### Rotas internas do MVP
+
+```text
+/internal/v1
+```
+
+Não fazem parte do contrato Liftflex — são infraestrutura própria do chatbot/MVP (estado de conversa, política anti-spam, logs, base de conhecimento). Implementado em [api/src/routes/internal.js](api/src/routes/internal.js).
+
 - `GET /MvpConfig`
 - `GET /GetConversationState`
 - `POST /SetConversationState`

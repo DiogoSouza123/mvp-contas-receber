@@ -79,7 +79,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const apiBase = 'http://api:3000/Liftflex_API/rest/v2';\nasync function post(path, body) {\n  await fetch(apiBase + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });\n}\nawait post('/SetWhatsAppOptOut', { Telefone: $json.phone, OptOut: true, Reason: 'Cliente solicitou bloqueio de cobrancas automaticas no canal de atendimento', Source: 'chatbot', SourceMessage: $json.text });\nawait post('/ClearConversationState', { Telefone: $json.phone });\nreturn [{ json: { ...$json, replyText: 'Entendido. Nao enviaremos novas cobrancas automaticas por este canal. Se quiser retomar no futuro, fale com um operador.', logIntent: 'opt_out' } }];"
+        "jsCode": "const apiBase = 'http://api:3000/internal/v1';\nasync function post(path, body) {\n  await fetch(apiBase + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });\n}\nawait post('/SetWhatsAppOptOut', { Telefone: $json.phone, OptOut: true, Reason: 'Cliente solicitou bloqueio de cobrancas automaticas no canal de atendimento', Source: 'chatbot', SourceMessage: $json.text });\nawait post('/ClearConversationState', { Telefone: $json.phone });\nreturn [{ json: { ...$json, replyText: 'Entendido. Nao enviaremos novas cobrancas automaticas por este canal. Se quiser retomar no futuro, fale com um operador.', logIntent: 'opt_out' } }];"
       },
       "id": "chatbot-v2-handle-opt-out",
       "name": "Handle Opt Out",
@@ -250,7 +250,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "url": "http://api:3000/internal/v1/ChatbotLog",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Role: 'user', Message: $json.logText || $json.text || '[mensagem sem texto]', Channel: $json.channel || 'whatsapp', Metadata: { event: $json.event, chatId: $json.chatId, senderId: $json.senderId, channel: $json.channel } }) }}",
@@ -267,7 +267,7 @@
     },
     {
       "parameters": {
-        "url": "http://api:3000/Liftflex_API/rest/v2/MvpConfig",
+        "url": "http://api:3000/internal/v1/MvpConfig",
         "options": {}
       },
       "id": "chatbot-v2-get-config",
@@ -281,7 +281,7 @@
     },
     {
       "parameters": {
-        "url": "http://api:3000/Liftflex_API/rest/v2/GetConversationState",
+        "url": "http://api:3000/internal/v1/GetConversationState",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -318,7 +318,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "url": "http://api:3000/internal/v1/SetConversationState",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_menu_selection', ActiveFlow: '', LastIntent: 'welcome_menu', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
@@ -367,7 +367,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/ChatbotLog",
+        "url": "http://api:3000/internal/v1/ChatbotLog",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, DocumentoInformado: $json.document || null, Role: 'assistant', Message: $json.replyText, Intent: $json.logIntent, Channel: $json.channel || 'whatsapp', Metadata: { chatId: $json.chatId, senderId: $json.senderId, route: $json.route || '', classificationReason: $json.classificationReason || '', channel: $json.channel } }) }}",
@@ -385,7 +385,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "url": "http://api:3000/internal/v1/SetConversationState",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_document', ActiveFlow: $json.nextFlow || $json.resolvedFlow || 'segunda_via_boleto', LastIntent: 'ask_document', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",
@@ -567,7 +567,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/ClearConversationState",
+        "url": "http://api:3000/internal/v1/ClearConversationState",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone }) }}",
@@ -585,7 +585,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/KnowledgeBaseAnswer",
+        "url": "http://api:3000/internal/v1/KnowledgeBaseAnswer",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Question: $json.text, Telefone: $json.phone, MaxChunks: 4, PassThrough: $json }) }}",
@@ -709,7 +709,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/SetConversationState",
+        "url": "http://api:3000/internal/v1/SetConversationState",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, CurrentState: 'awaiting_knowledge_question', ActiveFlow: 'knowledge_base', LastIntent: 'ask_knowledge_question', Context: { lastUserMessage: $json.text, requestedAt: new Date().toISOString() }, ExpiresInHours: $json.conversationStateTtlHours || 12, PassThrough: $json }) }}",

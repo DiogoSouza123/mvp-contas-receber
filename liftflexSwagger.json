@@ -1,0 +1,2823 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "v2",
+        "description": "",
+        "version": "1"
+    },
+    "basePath": "/Liftflex_API/rest/v2",
+    "schemes": [
+        "https"
+    ],
+    "paths": {
+        "/GetBoletoByCprf": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetBoletoByCprf",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Cprf",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "TenantId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Retorno"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetBoletoById": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetBoletoById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "TenandId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/RetornoBoleto"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetChamadoById": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetChamadoById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ChamadoId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 1234567891234567,
+                        "format": "int64"
+                    },
+                    {
+                        "name": "TenantId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BooleanTextStr_ChamadoPDFRecord"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetChamadoLista": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetChamadoLista",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-api-key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ChamadoId",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "x-example": 1234567891234567,
+                        "format": "int64"
+                    },
+                    {
+                        "name": "Situacao",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "DataCadastroInicio",
+                        "in": "query",
+                        "required": false,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "DataCadastroFim",
+                        "in": "query",
+                        "required": false,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "Tecnico",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "AreaId",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "PredioId",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ChamadosListBooleanTextLongIntegerRecord"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetClienteByPessoaId": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetClienteByPessoaId",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "PessoaId",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetClienteStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetClientes": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "API para pesquisar Clientes.",
+                "operationId": "GetClientes",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ValorProcura",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetClienteStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasPagarById": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasPagarById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ContasPagarId",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCPStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasPagarBySituacao": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasPagarBySituacao",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "FinanceiroSituacaoId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "Help",
+                        "in": "query",
+                        "required": false,
+                        "type": "string",
+                        "default": "",
+                        "description": "Preencha com &quot;help&quot; para receber de retorno no campo mensagem as op&#231;&#245;es."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCPStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasPagarByVencimento": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasPagarByVencimento",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "DataInicioVencimento",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "DataFimVencimento",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCPStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasReceberByFinanceiroSituacao": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasReceberByFinanceiroSituacao",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "FinanceiroSituacao",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "Help",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": "",
+                        "description": "Preencha com &quot;help&quot; para receber de retorno no campo mensagem as op&#231;&#245;es."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCRStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasReceberById": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasReceberById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ContasReceberId",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCRStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContasReceberByVencimento": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContasReceberByVencimento",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "DataInicial",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "DataFinal",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetFinanceiroCRStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContatoCliente": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContatoCliente",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ClienteId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 1234567891234567,
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ContatosListBooleanTextLongIntegerRecord"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContratoByClienteId": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContratoByClienteId",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ClienteId",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetContratoStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetContratoById": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "GetContratoById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ContratoId",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetContratoStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetEmpresa": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "API para pesquisar Empresas",
+                "operationId": "GetEmpresa",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/API_Empresa"
+                        }
+                    }
+                }
+            }
+        },
+        "/GetProdutos": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "API para pesquisar Produtos",
+                "operationId": "GetProdutos",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Key",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "ValorProcura",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/GetProdutoStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/UpdateWhatsAppBoletoMessage": {
+            "post": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "UpdateWhatsAppBoletoMessage",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "BoletoId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "TenantId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "WhatsAppBoletoResponse",
+                        "in": "body",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/WhatsAppBoletoResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/ValidarCprfTelefone": {
+            "get": {
+                "tags": [
+                    "v2"
+                ],
+                "description": "",
+                "operationId": "ValidarCprfTelefone",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "TenantId",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "x-example": 0,
+                        "format": "int32"
+                    },
+                    {
+                        "name": "Cprf",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    },
+                    {
+                        "name": "Telefone",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "default": ""
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ValidarCprfTelefoneResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "API_Empresa": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NomeFantasia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CNAE": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cnpj": {
+                    "type": "string",
+                    "default": ""
+                },
+                "InscricaoEstadual": {
+                    "type": "string",
+                    "default": ""
+                },
+                "InscricaoMunicipal": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Regime": {
+                    "type": "string",
+                    "default": ""
+                },
+                "RegimeEspecial": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IncentivadorCultural": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FusoHorario": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Telefone": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FAX": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EmailPadrao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Site": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CEP": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Logradouro": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EnderecoNumero": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Complemento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Bairro": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cidade": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UF": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaCPF": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaCRC": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaCNPJ": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaLogradouro": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaNumero": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaComplemento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaBairro": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaMunicipio": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaUF": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaCEP": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaFone": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaFAX": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContabilistaEmail": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "BoletoResponse": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Identificador": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "Vencimento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Valor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "NossoNumero": {
+                    "type": "string",
+                    "default": ""
+                },
+                "LinhaDigitavel": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Binario": {
+                    "type": "string"
+                }
+            }
+        },
+        "BooleanTextStr_ChamadoPDFRecord": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IsSucesso": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Str_Chamado": {
+                    "$ref": "#/definitions/Str_ChamadoPDF"
+                }
+            }
+        },
+        "Chamados": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "ChamadoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "SituacaoChamadoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ContratoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "DataHoraChamado": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "InicioAtendimento": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "FimAtendimento": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "InicioDeslocamento": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "OrdemServicoExterna": {
+                    "type": "string",
+                    "default": ""
+                },
+                "HouvePendencia": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "DataHoraNotificacaoTecnico": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "IsFinalizadoPeloApp": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ReportadoPorNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Telefone": {
+                    "type": "string",
+                    "default": ""
+                },
+                "AssinaturaClienteFinalizado": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "Observacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DescricaoProblema": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Defeito": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Defeitos"
+                    }
+                },
+                "UserIdCadastro": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Predio_Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PredioArea_Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Elevador_Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Elevador_NumeroSerie": {
+                    "type": "string",
+                    "default": ""
+                },
+                "SituacaoChamado": {
+                    "type": "string",
+                    "default": ""
+                },
+                "SituacaoEquipamento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ObservacaoEquipamento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Fotos_Chamado": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Fotos_ChamadoList"
+                    }
+                },
+                "IdTecnico": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Tecnico": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IdCliente": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Cliente_Nome": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "ChamadosListBooleanTextLongIntegerRecord": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ChamadosList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Chamados"
+                    }
+                },
+                "Total": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "IsSucesso": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "ClienteStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NomeFantasia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "DataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "PessoaTipo": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32",
+                    "description": "1- Pessoa F&#237;sica 2-Pessoa Jur&#237;dica"
+                },
+                "Cpf_Cnpj": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Rg_Ie": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Im": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Inscri&#231;&#227;o Municipal"
+                },
+                "Guid": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Sexo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Ativo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "InsentoIE": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "InsentoIM": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "EmpresaRegime": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CNAE": {
+                    "type": "string",
+                    "default": ""
+                },
+                "RegimeEspecialTributacao": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "NFeIndicadorIE": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32",
+                    "description": "1-Contribuinte ICMS 2-Construbuinte Isento Inscri&#231;&#227;o 3-N&#227;o Contribuinte"
+                },
+                "IdExternoCliente": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IdExternoFornecedor": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UserIdCadastro": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UserIdManutencao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CodigoSequencial": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Site": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ISSQN": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "IRRF": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "CSLL": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "PIS": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "COFINS": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "INSS": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Senha": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EmpresaTributacaoMunicipioId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ClienteClasseId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "IdExterno": {
+                    "type": "string",
+                    "default": ""
+                },
+                "LimiteCredito": {
+                    "type": "number",
+                    "example": 0.1
+                }
+            },
+            "required": [
+                "CodigoSequencial",
+                "ISSQN",
+                "IRRF",
+                "CSLL",
+                "PIS",
+                "COFINS",
+                "INSS"
+            ]
+        },
+        "Contatos": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataNascimento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Rascunho": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContatosTelefone": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContatosTelefone"
+                    }
+                },
+                "ContatosEmails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContatosEmail"
+                    }
+                }
+            }
+        },
+        "ContatosEmail": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Email": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Rascunho": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EventoEmailTable": {
+                    "$ref": "#/definitions/EventoEmail"
+                }
+            }
+        },
+        "ContatosListBooleanTextLongIntegerRecord": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Total": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "IsSucesso": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Contatos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Contatos"
+                    }
+                }
+            }
+        },
+        "ContatosTelefone": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Telefone": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Padrao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EventoTelefone": {
+                    "$ref": "#/definitions/EventoTelefone"
+                }
+            }
+        },
+        "ContratoStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Ativo": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "TipoOperacaoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ClienteId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cpf": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cnpj": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ContratoTipoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "PeriodicidadeId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ContratoIndiceReajusteId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "SituacaoContratoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Numero": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataAssinatura": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "Observacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ValorContrato": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "NFSeNaturezaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Vigencia": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Justificativa": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "UserIdCadastro": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Ativo2": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ContratoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "PeriodicidadeId2": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "DataCompetencia": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ContratoIndiceReajusteId2": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ServicoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "FinanceiroRelacaoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "FinanceiroFormaPagamentoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ACada": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Objeto": {
+                    "type": "string",
+                    "default": ""
+                },
+                "VigenciaInicial": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "CicloFaturamentoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Prazo": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "VigenciaFinal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ValorItem": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "RecisaoData": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "RecisaoMotivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "AliquotaMulta": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "AliquotaJuros": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorParcela": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "VencimentoIncial": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "GerarPreFaturamento": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "SubTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorLiquido": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Vencimento": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ISSQNValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ISSQNAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "IRRFValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "IRRFAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "CSLLValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "CSLLAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "PISValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "PISAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "COFINSValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "COFINSAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "INSSValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "INSSAliquota": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "MunicipioIncidencia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "RetencaoValorTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorDeduzir": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "BaseCalculo": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ISSQNRetidoValor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorLiquidoServico": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Municipio": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UF": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CodigoUF": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "CodigoMunicipio": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "NFSeNaturezaId2": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "CTISS": {
+                    "type": "string",
+                    "default": "",
+                    "description": "C&#243;digo"
+                },
+                "CTISSItemAliquota": {
+                    "type": "number",
+                    "example": 0.1,
+                    "description": "C&#243;digo"
+                },
+                "CtissItem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CtissCodigo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EmitirNFSeUnica": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "EmitirNFSeAutomatico": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "TipoCompetenciaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "DiaCompetenciaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "FinanceiroContaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "CarteiraBoletoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Observacao2": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FormatoCompetenciaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ContratoReajusteAcadaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "ObservacaoNFSe": {
+                    "type": "string",
+                    "default": ""
+                }
+            },
+            "required": [
+                "Ativo",
+                "TipoOperacaoId",
+                "SituacaoContratoId",
+                "Justificativa",
+                "DataHoraCadastro",
+                "Ativo2",
+                "ContratoId",
+                "GerarPreFaturamento",
+                "EmitirNFSeUnica",
+                "EmitirNFSeAutomatico"
+            ]
+        },
+        "Defeitos": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Descricao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Codigo": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "EventoEmail": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "EventoEmailId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Label": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "EventoTelefone": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "EvendoTelefoneId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Label": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "FinanceiroCPConta": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Situacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "TipoOperacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IdOperacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Documento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "DataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "Historico": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FormaPagamento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "TotalParcelas": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NumeroParcela": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "SubTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DescontoTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "JurosTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "MultaTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Total": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DataVencimento": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ValorPago": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DataPagamento": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ImpostoRetido": {
+                    "type": "number",
+                    "example": 0.1
+                }
+            },
+            "required": [
+                "TipoOperacao",
+                "DataHoraCadastro",
+                "DataHoraManutencao",
+                "Historico",
+                "Parcelas",
+                "SubTotal",
+                "DescontoTotal",
+                "JurosTotal",
+                "MultaTotal",
+                "Total",
+                "DataVencimento",
+                "ValorPago",
+                "DataPagamento",
+                "RetencaoValorTotal"
+            ]
+        },
+        "FinanceiroCPPagador": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Ativo": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NomeFantasia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Tipo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cnpj": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cpf": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "FinanceiroCPRateioStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32",
+                    "description": "Id que identifica o rateio"
+                },
+                "PlanoContaOrdenador": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PlanoContaNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CentroCusto": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Valor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorPago": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Desconto": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Multa": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Juros": {
+                    "type": "number",
+                    "example": 0.1
+                }
+            },
+            "required": [
+                "ValorPago",
+                "Desconto",
+                "Multa",
+                "Juros"
+            ]
+        },
+        "FinanceiroCPStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Pagador": {
+                    "$ref": "#/definitions/FinanceiroCPPagador"
+                },
+                "Conta": {
+                    "$ref": "#/definitions/FinanceiroCPConta"
+                },
+                "Rateio": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FinanceiroCPRateioStruct"
+                    }
+                }
+            }
+        },
+        "FinanceiroCRConta": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Situacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "TipoOperacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IdOperacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Documento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "DataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "Historico": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FormaPagamento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "TotalParcelas": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NumeroParcela": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "SubTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DescontoTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "JurosTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "MultaTotal": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Total": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DataVencimento": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ValorPago": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "DataPagamento": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2014-12-31"
+                },
+                "ImpostoRetido": {
+                    "type": "number",
+                    "example": 0.1
+                }
+            },
+            "required": [
+                "TipoOperacao",
+                "DataHoraCadastro",
+                "DataHoraManutencao",
+                "Historico",
+                "Parcelas",
+                "SubTotal",
+                "DescontoTotal",
+                "JurosTotal",
+                "MultaTotal",
+                "Total",
+                "DataVencimento",
+                "ValorPago",
+                "DataPagamento",
+                "RetencaoValorTotal"
+            ]
+        },
+        "FinanceiroCRPagador": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Ativo": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Nome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NomeFantasia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Tipo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cnpj": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Cpf": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "FinanceiroCRRateioStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32",
+                    "description": "Id que identifica o rateio"
+                },
+                "PlanoContaOrdenador": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PlanoContaNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CentroCusto": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Valor": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ValorPago": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Desconto": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Multa": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Juros": {
+                    "type": "number",
+                    "example": 0.1
+                }
+            },
+            "required": [
+                "ValorPago",
+                "Desconto",
+                "Multa",
+                "Juros"
+            ]
+        },
+        "FinanceiroCRStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Pagador": {
+                    "$ref": "#/definitions/FinanceiroCRPagador"
+                },
+                "Conta": {
+                    "$ref": "#/definitions/FinanceiroCRConta"
+                },
+                "Rateio": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FinanceiroCRRateioStruct"
+                    }
+                }
+            }
+        },
+        "Fotos_ChamadoList": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Foto1": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Foto2": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Foto3": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "GetClienteStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ResultadoMsg": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Dados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ClienteStruct"
+                    }
+                }
+            },
+            "required": [
+                "Resultado",
+                "ResultadoMsg",
+                "Dados"
+            ]
+        },
+        "GetContratoStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ResultadoMsg": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Dados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContratoStruct"
+                    }
+                }
+            },
+            "required": [
+                "Resultado",
+                "ResultadoMsg",
+                "Dados"
+            ]
+        },
+        "GetFinanceiroCPStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ResultadoMsg": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Dados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FinanceiroCPStruct"
+                    }
+                }
+            },
+            "required": [
+                "Resultado",
+                "ResultadoMsg",
+                "Dados"
+            ]
+        },
+        "GetFinanceiroCRStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ResultadoMsg": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Dados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FinanceiroCRStruct"
+                    }
+                }
+            },
+            "required": [
+                "Resultado",
+                "ResultadoMsg",
+                "Dados"
+            ]
+        },
+        "GetProdutoStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ResultadoMsg": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Dados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ProdutoStruct"
+                    }
+                }
+            },
+            "required": [
+                "Resultado",
+                "ResultadoMsg",
+                "Dados"
+            ]
+        },
+        "ProdutoStruct": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "CodigoSequencial": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Ativo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Descricao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DescricaoNFe": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PrecoCusto": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "PrecoFixo": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "GTIN": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PesoBruto": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "PesoLiquido": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Informacao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IsPrecoFixo": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Garantia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "EstoqueMinimo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Complemento": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Referencia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "GUID": {
+                    "type": "string",
+                    "default": ""
+                },
+                "IdExterno": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ECF": {
+                    "type": "string",
+                    "default": ""
+                },
+                "PrecoFixoVarejista": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DescricaoHTML": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FabricanteId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "FaricanteAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FabricanteNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FabricanteURL": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FabricanteIdExterno": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FornecedorId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "FornecedorReferencia": {
+                    "type": "string",
+                    "default": ""
+                },
+                "FornecedorGUID": {
+                    "type": "string",
+                    "default": ""
+                },
+                "GrupoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "GrupoAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Grupo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "GrupoDataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "GrupoDataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "GrupoIdExterno": {
+                    "type": "string",
+                    "default": ""
+                },
+                "MarcaId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "MarcaNome": {
+                    "type": "string",
+                    "default": ""
+                },
+                "MarcaAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "MarcaURL": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NCMId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "NCMAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NCM": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NCMDescricao": {
+                    "type": "string",
+                    "default": ""
+                },
+                "NCMDataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "NCMDataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "EstoqueId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "Estoque": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ImagemUrlPequena": {
+                    "type": "string",
+                    "default": ""
+                },
+                "ImagemUrlGrande": {
+                    "type": "string",
+                    "default": ""
+                },
+                "LocalizacaoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "LocalizacaoEndereco": {
+                    "type": "string",
+                    "default": ""
+                },
+                "LocalizacaoAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "SubGrupoId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "SubGrupo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Tipo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UnidadeId": {
+                    "type": "integer",
+                    "example": 0,
+                    "format": "int32"
+                },
+                "UnidadeAtivo": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Unidade": {
+                    "type": "string",
+                    "default": ""
+                },
+                "UnidadeDataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "UnidadeDataHoaManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "UnidadeIdExterno": {
+                    "type": "string",
+                    "default": ""
+                },
+                "DataHoraCadastro": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "DataHoraManutencao": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2014-12-31T23:59:59.938Z"
+                },
+                "isLojaVirtual": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Embalagem_Largura": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Embalagem_Altura": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "Embalagem_Comprimento": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "ChaveIntegracaoExt": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "Retorno": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Boletos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BoletoResponse"
+                    }
+                }
+            }
+        },
+        "RetornoBoleto": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Resultado": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Boleto": {
+                    "$ref": "#/definitions/BoletoResponse"
+                }
+            }
+        },
+        "Str_ChamadoPDF": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "example": 1234567891234567,
+                    "format": "int64"
+                },
+                "Url": {
+                    "type": "string",
+                    "default": ""
+                },
+                "Binario": {
+                    "type": "string"
+                },
+                "FileName": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "ValidarCprfTelefoneResponse": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "CprfValido": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "TelefoneValido": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Mensagem": {
+                    "type": "string",
+                    "default": ""
+                },
+                "CodigoErro": {
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "WhatsAppBoletoResponse": {
+            "description": "",
+            "type": "object",
+            "properties": {
+                "Status": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "Message": {
+                    "type": "string",
+                    "default": ""
+                }
+            },
+            "required": [
+                "Status"
+            ]
+        }
+    },
+    "tags": [
+        {
+            "name": "v2"
+        }
+    ]
+}

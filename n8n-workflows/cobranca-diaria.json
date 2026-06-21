@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "url": "http://api:3000/Liftflex_API/rest/v2/MvpConfig",
+        "url": "http://api:3000/internal/v1/MvpConfig",
         "options": {}
       },
       "id": "fb2b9d0a-2d57-4955-bc89-4edc64459002",
@@ -179,7 +179,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://api:3000/Liftflex_API/rest/v2/CheckWhatsAppPolicy",
+        "url": "http://api:3000/internal/v1/CheckWhatsAppPolicy",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.text, PolicyType: 'campaign', PassThrough: $json }) }}",
