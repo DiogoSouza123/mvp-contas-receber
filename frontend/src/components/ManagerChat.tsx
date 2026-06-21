@@ -101,7 +101,18 @@ function AssistantAnswer({ answer, sql, rowsCount }: { answer: ManagerAnswer; sq
   );
 }
 
-export function ManagerChat() {
+function messageToHistoryContent(message: ChatMessage): string {
+  if ("answer" in message) {
+    return message.answer.resumo;
+  }
+  return message.text;
+}
+
+type Props = {
+  historyLimit: number;
+};
+
+export function ManagerChat({ historyLimit }: Props) {
   const [state, formAction, pending] = useActionState(askManagerAssistant, initialChatState);
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [isOpen, setIsOpen] = useState(false);
@@ -122,12 +133,25 @@ export function ManagerChat() {
         ? { id: `a-${state.requestId}`, role: "assistant", answer: state.answer, sql: state.sql, rowsCount: state.rowsCount }
         : { id: `a-${state.requestId}`, role: "assistant", text: state.error || "Não foi possível responder agora.", error: true };
 
-    setMessages((current) => [...current, userMessage, assistantMessage]);
+    setMessages((current) => {
+      const updated = [...current, userMessage, assistantMessage];
+      const greeting = updated[0];
+      const rest = updated.slice(1).slice(-historyLimit);
+      return [greeting, ...rest];
+    });
 
     if (state.ok) {
       formRef.current?.reset();
     }
-  }, [state]);
+  }, [state, historyLimit]);
+
+  const historyForRequest = JSON.stringify(
+    messages
+      .slice(1)
+      .filter((message) => !("error" in message && message.error))
+      .slice(-historyLimit)
+      .map((message) => ({ role: message.role, content: messageToHistoryContent(message) }))
+  );
 
   function handleQuestionKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== "Enter" || event.shiftKey) {
@@ -164,6 +188,7 @@ export function ManagerChat() {
         </Space>
 
         <form action={formAction} ref={formRef} style={{ marginTop: 16, display: "flex", gap: 8 }}>
+          <input type="hidden" name="history" value={historyForRequest} />
           <Input.TextArea
             name="question"
             placeholder="Escreva sua pergunta..."

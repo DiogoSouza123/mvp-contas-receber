@@ -5,6 +5,17 @@ import { ManagerChat } from "@/components/ManagerChat";
 import { ReceivablesTable } from "@/components/ReceivablesTable";
 import { getDashboardSnapshot, normalizeFilters } from "@/lib/dashboard";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { queryRows } from "@/lib/db";
+
+const DEFAULT_CHAT_HISTORY_LIMIT = 10;
+
+async function getChatHistoryLimit() {
+  const rows = await queryRows<{ valor: string }>(
+    "SELECT valor FROM parametros_mvp WHERE chave = 'chat_manager_history_limit'"
+  );
+  const valor = Number(rows[0]?.valor);
+  return Number.isFinite(valor) && valor > 0 ? valor : DEFAULT_CHAT_HISTORY_LIMIT;
+}
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -15,7 +26,10 @@ export default async function Home({ searchParams }: PageProps) {
   const filters = normalizeFilters(params);
 
   try {
-    const snapshot = await getDashboardSnapshot(filters);
+    const [snapshot, chatHistoryLimit] = await Promise.all([
+      getDashboardSnapshot(filters),
+      getChatHistoryLimit()
+    ]);
     const taxaSucessoWhatsapp =
       snapshot.kpis.totalEnvios === 0
         ? 0
@@ -85,7 +99,7 @@ export default async function Home({ searchParams }: PageProps) {
         </Row>
 
         <ReceivablesTable rows={snapshot.rows} />
-        <ManagerChat />
+        <ManagerChat historyLimit={chatHistoryLimit} />
       </>
     );
   } catch (error) {

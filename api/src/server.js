@@ -50,7 +50,8 @@ async function ensureRuntimeSchema() {
         ('campaign_cooldown_minutes', '30', 'Janela minima entre envios automaticos para o mesmo telefone'),
         ('campaign_daily_limit_per_phone', '1', 'Quantidade maxima de cobrancas automaticas por telefone no mesmo dia'),
         ('campaign_dedupe_window_minutes', '1440', 'Janela para bloquear o reenvio do mesmo texto para o mesmo telefone'),
-        ('conversation_state_ttl_hours', '12', 'Tempo padrao de expiracao do estado de conversa do chatbot')
+        ('conversation_state_ttl_hours', '12', 'Tempo padrao de expiracao do estado de conversa do chatbot'),
+        ('chat_manager_history_limit', '10', 'Quantidade maxima de mensagens do Chat Gerencial mantidas como contexto (client-side, zerado ao atualizar a pagina)')
       ON CONFLICT (chave) DO NOTHING
     `,
     `
