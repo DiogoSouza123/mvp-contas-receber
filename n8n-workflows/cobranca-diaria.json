@@ -281,8 +281,9 @@
         2580,
         240
       ],
-      "notes": "Envia a cobranca inicial ao cliente pelo WhatsApp.",
-      "notesInFlow": true
+      "notes": "Envia a cobranca inicial ao cliente pelo WhatsApp. onError continua o lote mesmo se o WAHA recusar um numero invalido/inexistente.",
+      "notesInFlow": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -315,6 +316,39 @@
         240
       ],
       "notes": "Registra no banco o resultado do envio para auditoria e acompanhamento.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/Liftflex_API/rest/v2/UpdateWhatsAppBoletoMessage",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "BoletoId",
+              "value": "={{$node[\"Preparar Cobranca WhatsApp\"].json.boletoId}}"
+            },
+            {
+              "name": "TenantId",
+              "value": "={{$node[\"Preparar Cobranca WhatsApp\"].json.tenantId}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Status: false, Message: $json.ReasonMessage, SentText: '', Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
+        "options": {}
+      },
+      "id": "d2e3f4a5-6b7c-489d-9ef0-123456789abc",
+      "name": "Registrar Bloqueio de Envio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2580,
+        420
+      ],
+      "notes": "Quando a politica anti-spam bloqueia o envio, registra a tentativa (status false) para que os indicadores de efetividade reflitam todas as tentativas, nao so os sucessos.",
       "notesInFlow": true
     },
     {
@@ -522,7 +556,13 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Registrar Bloqueio de Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Enviar Cobranca WhatsApp": {
