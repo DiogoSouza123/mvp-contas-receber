@@ -72,9 +72,10 @@ services:
       - postgres
       - api
     environment:
-      N8N_HOST: localhost
+      N8N_HOST: ${NGROK_DOMAIN:-localhost}
       N8N_PORT: 5678
-      N8N_PROTOCOL: http
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-}
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_PORT: 5432
@@ -109,3 +110,18 @@ services:
       - "3001:3000"
     volumes:
       - ./waha_sessions:/app/.sessions
+
+  ngrok:
+    image: ngrok/ngrok:3
+    container_name: mvp-ngrok
+    restart: unless-stopped
+    depends_on:
+      - n8n
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:?NGROK_AUTHTOKEN must be set}
+    command:
+      - "http"
+      - "n8n:5678"
+      - "--domain=${NGROK_DOMAIN:?NGROK_DOMAIN must be set, claim a free static domain at dashboard.ngrok.com}"
+    ports:
+      - "4040:4040"

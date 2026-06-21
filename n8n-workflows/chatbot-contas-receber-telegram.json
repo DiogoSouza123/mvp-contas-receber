@@ -726,62 +726,20 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        }
+        "httpMethod": "POST",
+        "path": "telegram-contas-receber-v2",
+        "responseMode": "onReceived",
+        "options": {}
       },
-      "id": "chatbot-v2-telegram-poll-cron",
-      "name": "Telegram Poll Every Minute",
-      "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
+      "id": "chatbot-v2-telegram-webhook",
+      "name": "Telegram Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
       "position": [
         160,
         680
-      ]
-    },
-    {
-      "parameters": {
-        "url": "={{$json.url}}",
-        "options": {}
-      },
-      "id": "chatbot-v2-poll-telegram-updates",
-      "name": "Poll Telegram Updates",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        680,
-        680
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const token = $env.TELEGRAM_BOT_TOKEN;\nif (!token) {\n  throw new Error('TELEGRAM_BOT_TOKEN nao configurado no ambiente do n8n.');\n}\n\nconst staticData = $getWorkflowStaticData('global');\nconst offset = Number(staticData.telegramUpdateOffset || 0);\nlet url = 'https://api.telegram.org/bot' + token + '/getUpdates?limit=20&timeout=0';\nif (offset > 0) url += '&offset=' + String(offset);\n\nreturn [{ json: { url } }];"
-      },
-      "id": "chatbot-v2-build-telegram-poll-request",
-      "name": "Build Telegram Poll Request",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        420,
-        680
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $json;\nif (!data.ok) {\n  throw new Error('Falha ao consultar Telegram getUpdates: ' + (data.description || 'erro desconhecido'));\n}\n\nconst updates = Array.isArray(data.result) ? data.result : [];\nconst staticData = $getWorkflowStaticData('global');\nif (updates.length > 0) {\n  staticData.telegramUpdateOffset = Math.max(...updates.map((update) => Number(update.update_id || 0))) + 1;\n}\n\nreturn updates\n  .filter((update) => {\n    const message = update.message || update.edited_message;\n    const text = message?.text || message?.caption || '';\n    return message?.chat?.id && text && message.from?.is_bot !== true;\n  })\n  .map((update) => ({ json: { body: update } }));"
-      },
-      "id": "chatbot-v2-process-telegram-updates",
-      "name": "Process Telegram Updates",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        940,
-        680
-      ]
+      ],
+      "webhookId": "telegram-contas-receber-v2"
     },
     {
       "parameters": {
@@ -1293,40 +1251,7 @@
         ]
       ]
     },
-    "Telegram Poll Every Minute": {
-      "main": [
-        [
-          {
-            "node": "Build Telegram Poll Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Poll Telegram Updates": {
-      "main": [
-        [
-          {
-            "node": "Process Telegram Updates",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Telegram Poll Request": {
-      "main": [
-        [
-          {
-            "node": "Poll Telegram Updates",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Process Telegram Updates": {
+    "Telegram Webhook": {
       "main": [
         [
           {
@@ -1375,7 +1300,7 @@
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "local-refactor",
-    "templateDescription": "Clone multicanal do chatbot de contas a receber com entrada via WhatsApp/WAHA e polling local do Telegram via HTTP Request, normalizacao unica, estado por canal e envio dinamico de resposta."
+    "templateDescription": "Clone multicanal do chatbot de contas a receber com entrada via WhatsApp/WAHA e webhook do Telegram (setWebhook), normalizacao unica, estado por canal e envio dinamico de resposta."
   },
   "id": "chatbot-contas-receber-telegram",
   "tags": []
