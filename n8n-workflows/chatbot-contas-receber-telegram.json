@@ -125,12 +125,17 @@
     },
     {
       "parameters": {
-        "jsCode": "const replyText = '\\uD83D\\uDC54 Ol\\u00E1. Bem-vindo ao canal de atendimento da Nippon Elevadores.\\n\\nAtrav\\u00E9s deste menu, podemos auxili\\u00E1-lo com quest\\u00F5es de Contas a Receber. Por gentileza, selecione a op\\u00E7\\u00E3o que melhor atende \\u00E0 sua necessidade no momento:\\n\\n\\uD83D\\uDD38 1. Segunda via de boleto\\n\\uD83D\\uDD38 2. Outros assuntos\\n\\nCaso a sua solicita\\u00E7\\u00E3o demande suporte adicional, um atendente dar\\u00E1 continuidade ao seu atendimento.';\nreturn [{ json: { ...$json, replyText, logIntent: 'welcome_menu' } }];"
+        "method": "POST",
+        "url": "http://api:3000/internal/v1/RenderizarTemplate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Chave: 'boas_vindas_menu', Canal: $json.channel, LogIntent: 'welcome_menu', PassThrough: $json }) }}",
+        "options": {}
       },
       "id": "chatbot-v2-handle-welcome",
       "name": "Montar Mensagem de Boas-Vindas",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         2580,
         360
@@ -352,7 +357,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.channel === 'telegram' ? { chat_id: $json.chatId, text: $json.replyText } : { session: $json.session || 'default', chatId: $json.chatId, text: $json.replyText }) }}",
+        "jsonBody": "={{ JSON.stringify($json.channel === 'telegram' ? { chat_id: $json.chatId, text: $json.replyText || $json.Conteudo } : { session: $json.session || 'default', chatId: $json.chatId, text: $json.replyText || $json.Conteudo }) }}",
         "options": {}
       },
       "id": "chatbot-v2-send-whatsapp",
@@ -370,7 +375,7 @@
         "url": "http://api:3000/internal/v1/ChatbotLog",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, DocumentoInformado: $json.document || null, Role: 'assistant', Message: $json.replyText, Intent: $json.logIntent, Channel: $json.channel || 'whatsapp', Metadata: { chatId: $json.chatId, senderId: $json.senderId, route: $json.route || '', classificationReason: $json.classificationReason || '', channel: $json.channel } }) }}",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, DocumentoInformado: $json.document || null, Role: 'assistant', Message: $json.replyText || $json.Conteudo, Intent: $json.logIntent, Channel: $json.channel || 'whatsapp', Metadata: { chatId: $json.chatId, senderId: $json.senderId, route: $json.route || '', classificationReason: $json.classificationReason || '', channel: $json.channel } }) }}",
         "options": {}
       },
       "id": "chatbot-v2-log-outbound",
@@ -649,12 +654,17 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $item(0).$node[\"Montar Contexto da Conversa\"].json;\nconst fallbackMessage = context.fallbackMessage || 'Nao encontrei essa informacao na base de conhecimento agora. Vou encaminhar seu atendimento para um operador.';\nreturn [{ json: { ...context, replyText: fallbackMessage, logIntent: 'default_operator' } }];"
+        "method": "POST",
+        "url": "http://api:3000/internal/v1/RenderizarTemplate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Chave: 'fallback_atendimento', Canal: $item(0).$node[\"Montar Contexto da Conversa\"].json.channel, LogIntent: 'default_operator', PassThrough: $item(0).$node[\"Montar Contexto da Conversa\"].json }) }}",
+        "options": {}
       },
       "id": "chatbot-v2-build-fallback",
       "name": "Montar Resposta de Encaminhamento",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         3660,
         1040

@@ -163,7 +163,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const boletoItems = $input.all();\nconst accountItems = $items('Expandir Contas Vencidas');\nconst contactItems = $items('Buscar Contatos do Cliente');\nconst charges = [];\n\nfor (let index = 0; index < boletoItems.length; index += 1) {\n  const account = accountItems[index]?.json;\n  const contactsResponse = contactItems[index]?.json || {};\n  if (!account) continue;\n\n  const contacts = contactsResponse.Contatos || [];\n  const defaultContact = contacts[0];\n  const phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\n  if (!phone) continue;\n\n  const boletos = boletoItems[index].json.Boletos || [];\n  const boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\n  if (!boleto) continue;\n\n  const amount = Number(account.total || 0).toFixed(2).replace('.', ',');\n  const chatId = phone.includes('@') ? phone : phone + '@c.us';\n  const text = account.initialMessage + '\\nCliente: ' + account.clienteNome + '\\nDocumento: ' + account.documento + '\\nVencimento: ' + account.vencimento + '\\nValor: R$ ' + amount + '\\nLinha digitavel: ' + boleto.LinhaDigitavel;\n\n  charges.push({\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      text,\n    },\n    pairedItem: { item: index },\n  });\n}\n\nreturn charges;"
+        "jsCode": "const boletoItems = $input.all();\nconst accountItems = $items('Expandir Contas Vencidas');\nconst contactItems = $items('Buscar Contatos do Cliente');\nconst charges = [];\n\nfor (let index = 0; index < boletoItems.length; index += 1) {\n  const account = accountItems[index]?.json;\n  const contactsResponse = contactItems[index]?.json || {};\n  if (!account) continue;\n\n  const contacts = contactsResponse.Contatos || [];\n  const defaultContact = contacts[0];\n  const phone = defaultContact?.ContatosTelefone?.[0]?.Telefone;\n  if (!phone) continue;\n\n  const boletos = boletoItems[index].json.Boletos || [];\n  const boleto = boletos.find((item) => item.Vencimento === account.vencimento) || boletos[0];\n  if (!boleto) continue;\n\n  const amount = Number(account.total || 0).toFixed(2).replace('.', ',');\n  const chatId = phone.includes('@') ? phone : phone + '@c.us';\n\n  charges.push({\n    json: {\n      ...account,\n      phone,\n      chatId,\n      boletoId: boleto.Identificador,\n      linhaDigitavel: boleto.LinhaDigitavel,\n      cliente_nome: account.clienteNome,\n      documento: account.documento,\n      vencimento: account.vencimento,\n      valor: amount,\n      linha_digitavel: boleto.LinhaDigitavel,\n    },\n    pairedItem: { item: index },\n  });\n}\n\nreturn charges;"
       },
       "id": "b34c31a0-1fd4-4eff-b8fd-bd45f6db5008",
       "name": "Preparar Cobranca WhatsApp",
@@ -179,10 +179,30 @@
     {
       "parameters": {
         "method": "POST",
+        "url": "http://api:3000/internal/v1/RenderizarTemplate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Chave: 'cobranca_inicial', Canal: 'whatsapp', Variaveis: { cliente_nome: $json.cliente_nome, documento: $json.documento, vencimento: $json.vencimento, valor: $json.valor, linha_digitavel: $json.linha_digitavel }, PassThrough: $json }) }}",
+        "options": {}
+      },
+      "id": "c4d5e6f7-8901-4234-9abc-def123456789",
+      "name": "Renderizar Mensagem de Cobranca",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2020,
+        300
+      ],
+      "notes": "Renderiza o template configuravel de cobranca inicial com os dados do titulo.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
         "url": "http://api:3000/internal/v1/CheckWhatsAppPolicy",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.text, PolicyType: 'campaign', PassThrough: $json }) }}",
+        "jsonBody": "={{ JSON.stringify({ Telefone: $json.phone, Message: $json.Conteudo, PolicyType: 'campaign', PassThrough: $json }) }}",
         "options": {}
       },
       "id": "4ec94f94-cdc2-4431-922e-a80e3d391008",
@@ -250,7 +270,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ session: 'default', chatId: $node[\"Preparar Cobranca WhatsApp\"].json.chatId, text: $node[\"Preparar Cobranca WhatsApp\"].json.text }) }}",
+        "jsonBody": "={{ JSON.stringify({ session: 'default', chatId: $node[\"Preparar Cobranca WhatsApp\"].json.chatId, text: $node[\"Renderizar Mensagem de Cobranca\"].json.Conteudo }) }}",
         "options": {}
       },
       "id": "5e4e8ab8-375d-42c6-9542-e43b5b4da009",
@@ -283,7 +303,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Preparar Cobranca WhatsApp\"].json.text, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
+        "jsonBody": "={{ JSON.stringify({ Status: true, Message: 'Mensagem enviada via workflow n8n', SentText: $node[\"Renderizar Mensagem de Cobranca\"].json.Conteudo, Category: 'collection_initial', PolicyType: 'campaign', Metadata: { reasonCode: $json.ReasonCode } }) }}",
         "options": {}
       },
       "id": "8a365ef5-97b8-4c8d-8b82-81d23849f010",
@@ -461,6 +481,17 @@
       ]
     },
     "Preparar Cobranca WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Mensagem de Cobranca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Mensagem de Cobranca": {
       "main": [
         [
           {

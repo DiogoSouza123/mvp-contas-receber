@@ -611,6 +611,160 @@ router.post('/SetWhatsAppOptOut', async (req, res, next) => {
   }
 });
 
+async function getTemplate(chave, canal, tenantId = 1) {
+  const result = await db.query(
+    `
+      SELECT id, chave, canal, conteudo, ativo
+      FROM templates_mensagem
+      WHERE tenant_id = $1
+        AND chave = $2
+        AND canal = ANY($3::text[])
+        AND ativo = TRUE
+      ORDER BY (canal = $4) DESC
+      LIMIT 1
+    `,
+    [tenantId, chave, [canal, 'all'], canal]
+  );
+
+  return result.rowCount > 0 ? result.rows[0] : null;
+}
+
+function renderTemplateContent(conteudo, variaveis = {}) {
+  return conteudo.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, campo) => {
+    const valor = variaveis[campo];
+    return valor === undefined || valor === null ? match : String(valor);
+  });
+}
+
+router.get('/Templates', async (req, res, next) => {
+  try {
+    const { Chave, Canal = 'all', TenantId = 1 } = req.query;
+
+    if (!Chave) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'Chave e obrigatoria.',
+      });
+    }
+
+    const template = await getTemplate(Chave, Canal, Number(TenantId));
+
+    if (!template) {
+      return res.json({ Success: true, Found: false, Template: null });
+    }
+
+    return res.json({
+      Success: true,
+      Found: true,
+      Template: {
+        Id: Number(template.id),
+        Chave: template.chave,
+        Canal: template.canal,
+        Conteudo: template.conteudo,
+        Ativo: template.ativo,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/RenderizarTemplate', async (req, res, next) => {
+  try {
+    const { Chave, Canal = 'all', Variaveis = {}, TenantId = 1, LogIntent = null, PassThrough = {} } = req.body || {};
+
+    if (!Chave) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'Chave e obrigatoria.',
+      });
+    }
+
+    const template = await getTemplate(Chave, Canal, Number(TenantId));
+
+    if (!template) {
+      return res.status(404).json({
+        Success: false,
+        Message: `Nenhum template ativo encontrado para chave "${Chave}" no canal "${Canal}".`,
+      });
+    }
+
+    const conteudo = renderTemplateContent(template.conteudo, Variaveis);
+
+    return res.json({
+      Success: true,
+      Chave: template.chave,
+      Conteudo: conteudo,
+      ...PassThrough,
+      logIntent: LogIntent || Chave,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/CriarTemplate', async (req, res, next) => {
+  try {
+    const { Chave, Canal = 'all', Conteudo, TenantId = 1 } = req.body || {};
+
+    if (!Chave || !Conteudo) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'Chave e Conteudo sao obrigatorios.',
+      });
+    }
+
+    const result = await db.query(
+      `
+        INSERT INTO templates_mensagem (tenant_id, chave, canal, conteudo)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (tenant_id, chave, canal) DO UPDATE
+        SET conteudo = EXCLUDED.conteudo,
+            ativo = TRUE,
+            updated_at = NOW()
+        RETURNING id
+      `,
+      [TenantId, Chave, Canal, Conteudo]
+    );
+
+    return res.json({ Success: true, Id: Number(result.rows[0].id) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/AtualizarTemplate', async (req, res, next) => {
+  try {
+    const { Id, Conteudo, Ativo } = req.body || {};
+
+    if (!Id) {
+      return res.status(400).json({
+        Success: false,
+        Message: 'Id e obrigatorio.',
+      });
+    }
+
+    const result = await db.query(
+      `
+        UPDATE templates_mensagem
+        SET conteudo = COALESCE($2, conteudo),
+            ativo = COALESCE($3, ativo),
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING id
+      `,
+      [Id, Conteudo ?? null, typeof Ativo === 'boolean' ? Ativo : null]
+    );
+
+    return res.json({
+      Success: result.rowCount > 0,
+      Message: result.rowCount > 0 ? 'Template atualizado.' : 'Template nao encontrado.',
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/RegistrarAcompanhamentoCobranca', async (req, res, next) => {
   try {
     const { ContaReceberId, ClienteId, TenantId = 1 } = req.body || {};
