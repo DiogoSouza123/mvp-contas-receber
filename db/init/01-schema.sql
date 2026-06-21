@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS app.contatos (
     whatsapp_opt_out BOOLEAN NOT NULL DEFAULT FALSE,
     whatsapp_opt_out_at TIMESTAMPTZ,
     whatsapp_opt_out_reason TEXT NOT NULL DEFAULT '',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT contatos_cliente_telefone_key UNIQUE (cliente_id, telefone)
 );
 
 CREATE TABLE IF NOT EXISTS app.contas_receber (
@@ -185,15 +186,15 @@ COMMENT ON COLUMN app.contas_receber.historico IS 'Descricao ou historico do tit
 COMMENT ON COLUMN app.contas_receber.forma_pagamento IS 'Forma de pagamento prevista para o titulo.';
 COMMENT ON COLUMN app.contas_receber.total_parcelas IS 'Quantidade total de parcelas da operacao.';
 COMMENT ON COLUMN app.contas_receber.numero_parcela IS 'Numero da parcela deste titulo.';
-COMMENT ON COLUMN app.contas_receber.subtotal IS 'Valor original antes de descontos, juros e multa.';
-COMMENT ON COLUMN app.contas_receber.desconto_total IS 'Valor total de desconto aplicado.';
-COMMENT ON COLUMN app.contas_receber.juros_total IS 'Valor total de juros aplicado.';
-COMMENT ON COLUMN app.contas_receber.multa_total IS 'Valor total de multa aplicado.';
-COMMENT ON COLUMN app.contas_receber.total IS 'Valor total do titulo.';
+COMMENT ON COLUMN app.contas_receber.subtotal IS 'Subtotal do titulo, antes de descontos, juros e multa.';
+COMMENT ON COLUMN app.contas_receber.desconto_total IS 'Desconto total aplicado ao titulo.';
+COMMENT ON COLUMN app.contas_receber.juros_total IS 'Juros total aplicado ao titulo.';
+COMMENT ON COLUMN app.contas_receber.multa_total IS 'Multa total aplicada ao titulo.';
+COMMENT ON COLUMN app.contas_receber.total IS 'Coluna a usar para o total monetario do titulo (subtotal + juros + multa - desconto).';
 COMMENT ON COLUMN app.contas_receber.data_vencimento IS 'Data de vencimento do titulo. Use junto com situacao para identificar atraso.';
-COMMENT ON COLUMN app.contas_receber.valor_pago IS 'Valor pago ate o momento.';
+COMMENT ON COLUMN app.contas_receber.valor_pago IS 'Quantia paga ate o momento.';
 COMMENT ON COLUMN app.contas_receber.data_pagamento IS 'Data de pagamento do titulo, quando quitado.';
-COMMENT ON COLUMN app.contas_receber.imposto_retido IS 'Valor de imposto retido no titulo.';
+COMMENT ON COLUMN app.contas_receber.imposto_retido IS 'Imposto retido no titulo.';
 
 COMMENT ON TABLE app.boletos IS 'Boletos associados aos titulos de contas a receber.';
 COMMENT ON COLUMN app.boletos.id IS 'Identificador unico do boleto.';
