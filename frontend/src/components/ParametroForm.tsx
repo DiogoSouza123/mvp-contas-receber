@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Alert, Button, Input, Space } from "antd";
 
 import { atualizarParametro } from "@/app/configuracoes/actions";
 
@@ -16,20 +17,19 @@ export function ParametroForm({ chave, descricao, valorInicial }: ParametroFormP
   const [state, formAction, pending] = useActionState(atualizarParametro, initialState);
 
   return (
-    <form action={formAction} className="config-row">
+    <form action={formAction}>
       <input type="hidden" name="chave" value={chave} />
-      <div className="input-group input-grow">
-        <label htmlFor={`valor-${chave}`}>
-          {chave}
-          <span className="config-helper"> — {descricao}</span>
-        </label>
-        <input id={`valor-${chave}`} name="valor" type="text" defaultValue={valorInicial} />
-      </div>
-      <button type="submit" className="btn-secondary" disabled={pending}>
-        {pending ? "Salvando..." : "Salvar"}
-      </button>
-      {state.error ? <p className="config-error">{state.error}</p> : null}
-      {state.ok ? <p className="config-success">Salvo.</p> : null}
+      <Space.Compact style={{ width: "100%" }}>
+        <Input addonBefore={chave} name="valor" defaultValue={valorInicial} />
+        <Button type="primary" htmlType="submit" loading={pending}>
+          Salvar
+        </Button>
+      </Space.Compact>
+      <p className="cell-helper" style={{ marginTop: 4 }}>
+        {descricao}
+      </p>
+      {state.error ? <Alert type="error" message={state.error} showIcon style={{ marginTop: 4 }} /> : null}
+      {state.ok ? <Alert type="success" message="Salvo." showIcon style={{ marginTop: 4 }} /> : null}
     </form>
   );
 }

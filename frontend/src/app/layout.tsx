@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Manrope, Rajdhani } from "next/font/google";
+import { ConfigProvider } from "antd";
+import ptBR from "antd/locale/pt_BR";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 
 import "./globals.css";
+import { AppShell } from "@/components/AppShell";
 
 const bodyFont = Manrope({
   subsets: ["latin"],
@@ -20,27 +23,25 @@ export const metadata: Metadata = {
   description: "Dashboard gerencial de inadimplência e cobranças."
 };
 
-const navLinks = [
-  { href: "/", label: "Dashboard" },
-  { href: "/clientes", label: "Clientes" },
-  { href: "/cobrancas", label: "Cobranças" },
-  { href: "/configuracoes", label: "Configurações" }
-];
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body className={`${bodyFont.variable} ${titleFont.variable}`}>
-        <nav className="top-nav">
-          <div className="top-nav-inner">
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="top-nav-link">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
-        {children}
+        <AntdRegistry>
+          <ConfigProvider
+            locale={ptBR}
+            theme={{
+              token: {
+                colorPrimary: "#e60012",
+                colorLink: "#e60012",
+                borderRadius: 8,
+                fontFamily: "var(--font-body), sans-serif"
+              }
+            }}
+          >
+            <AppShell>{children}</AppShell>
+          </ConfigProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

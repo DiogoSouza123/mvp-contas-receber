@@ -1,6 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Alert, Button, Drawer, FloatButton, Input, Space, Statistic, Table, Tag } from "antd";
+import { MessageOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
 
 import { askManagerAssistant, type ManagerAnswer } from "@/app/actions";
 
@@ -36,59 +39,63 @@ const initialChatState: ChatState = {
 };
 
 function AssistantAnswer({ answer, sql, rowsCount }: { answer: ManagerAnswer; sql: string; rowsCount: number }) {
+  const columns: ColumnsType<Record<string, string>> | undefined = answer.tabela
+    ? answer.tabela.colunas.map((coluna) => ({
+        title: coluna,
+        dataIndex: coluna,
+        key: coluna
+      }))
+    : undefined;
+
+  const dataSource: Record<string, string>[] = answer.tabela
+    ? answer.tabela.linhas.map((linha) => {
+        const row: Record<string, string> = {};
+        answer.tabela!.colunas.forEach((coluna, colIndex) => {
+          row[coluna] = linha[colIndex];
+        });
+        return row;
+      })
+    : [];
+
   return (
     <>
-      <p className="chat-summary">{answer.resumo}</p>
+      <p style={{ fontWeight: 600 }}>{answer.resumo}</p>
 
       {answer.metricas.length > 0 ? (
-        <div className="chat-metrics">
+        <Space size="large" wrap style={{ marginTop: 8 }}>
           {answer.metricas.map((metrica, index) => (
-            <div className="chat-metric-chip" key={`${metrica.rotulo}-${index}`}>
-              <span className="chat-metric-label">{metrica.rotulo}</span>
-              <span className="chat-metric-value">{metrica.valor}</span>
-            </div>
+            <Statistic key={`${metrica.rotulo}-${index}`} title={metrica.rotulo} value={metrica.valor} valueStyle={{ fontSize: 16 }} />
           ))}
-        </div>
+        </Space>
       ) : null}
 
       {answer.tabela ? (
-        <div className="chat-table-wrapper">
-          <table className="chat-table">
-            <thead>
-              <tr>
-                {answer.tabela.colunas.map((coluna) => (
-                  <th key={coluna}>{coluna}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {answer.tabela.linhas.map((linha, rowIndex) => (
-                <tr key={rowIndex}>
-                  {linha.map((celula, cellIndex) => (
-                    <td key={cellIndex}>{celula}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          style={{ marginTop: 12 }}
+          size="small"
+          columns={columns}
+          dataSource={dataSource}
+          rowKey={(_, index) => String(index)}
+          pagination={false}
+          scroll={{ x: true }}
+        />
       ) : null}
 
       {answer.alertas.length > 0 ? (
-        <ul className="chat-alerts">
+        <Space direction="vertical" size={4} style={{ marginTop: 12 }}>
           {answer.alertas.map((alerta, index) => (
-            <li key={index} className="chat-alert-item">
+            <Tag key={index} color="warning">
               {alerta}
-            </li>
+            </Tag>
           ))}
-        </ul>
+        </Space>
       ) : null}
 
-      {answer.proximaAcao ? <p className="chat-next-action">Próxima ação: {answer.proximaAcao}</p> : null}
+      {answer.proximaAcao ? <p style={{ marginTop: 8, fontWeight: 600 }}>Próxima ação: {answer.proximaAcao}</p> : null}
 
-      <details className="chat-sql">
+      <details style={{ marginTop: 12 }}>
         <summary>SQL executada ({rowsCount} linha(s) retornada(s))</summary>
-        <pre>{sql}</pre>
+        <pre className="chat-sql-pre">{sql}</pre>
       </details>
     </>
   );
@@ -99,8 +106,6 @@ export function ManagerChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const chatLogRef = useRef<HTMLDivElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastHandledRequestId = useRef("");
 
   useEffect(() => {
@@ -110,125 +115,69 @@ export function ManagerChat() {
 
     lastHandledRequestId.current = state.requestId;
 
-    const userMessage: ChatMessage = {
-      id: `u-${state.requestId}`,
-      role: "user",
-      text: state.question
-    };
+    const userMessage: ChatMessage = { id: `u-${state.requestId}`, role: "user", text: state.question };
 
     const assistantMessage: ChatMessage =
       state.ok && state.answer
-        ? {
-            id: `a-${state.requestId}`,
-            role: "assistant",
-            answer: state.answer,
-            sql: state.sql,
-            rowsCount: state.rowsCount
-          }
-        : {
-            id: `a-${state.requestId}`,
-            role: "assistant",
-            text: state.error || "Não foi possível responder agora.",
-            error: true
-          };
+        ? { id: `a-${state.requestId}`, role: "assistant", answer: state.answer, sql: state.sql, rowsCount: state.rowsCount }
+        : { id: `a-${state.requestId}`, role: "assistant", text: state.error || "Não foi possível responder agora.", error: true };
 
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
-    if (state.ok && textareaRef.current) {
-      textareaRef.current.value = "";
-      textareaRef.current.focus();
+    if (state.ok) {
+      formRef.current?.reset();
     }
   }, [state]);
-
-  useEffect(() => {
-    if (!isOpen || !chatLogRef.current) {
-      return;
-    }
-
-    chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-  }, [isOpen, messages, pending]);
 
   function handleQuestionKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== "Enter" || event.shiftKey) {
       return;
     }
-
     event.preventDefault();
-
     if (pending || event.currentTarget.value.trim().length < 4) {
       return;
     }
-
     formRef.current?.requestSubmit();
   }
 
   return (
-    <aside className="chat-widget" aria-label="Chat gerencial">
-      {isOpen ? (
-        <section className="chat-popup">
-          <header className="chat-popup-header">
-            <div>
-              <h2 className="chat-popup-title">Chat Gerencial</h2>
-              <p className="chat-popup-subtitle">Assistente LLM</p>
+    <>
+      <FloatButton icon={<MessageOutlined />} type="primary" tooltip="Chat Gerencial" onClick={() => setIsOpen(true)} />
+
+      <Drawer title="Chat Gerencial" open={isOpen} onClose={() => setIsOpen(false)} width={480}>
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          {messages.map((message) => (
+            <div key={message.id}>
+              <p className="cell-helper" style={{ marginBottom: 4 }}>
+                {message.role === "user" ? "Gestor" : "Assistente"}
+              </p>
+              {"answer" in message ? (
+                <AssistantAnswer answer={message.answer} sql={message.sql} rowsCount={message.rowsCount} />
+              ) : "error" in message && message.error ? (
+                <Alert type="error" message={message.text} showIcon />
+              ) : (
+                <p>{message.text}</p>
+              )}
             </div>
-            <button
-              type="button"
-              className="chat-icon-button"
-              aria-label="Recolher chat"
-              onClick={() => setIsOpen(false)}
-            >
-              -
-            </button>
-          </header>
+          ))}
+          {pending ? <p className="cell-helper">Analisando...</p> : null}
+        </Space>
 
-          <div className="chat-log" ref={chatLogRef}>
-            {messages.map((message) => (
-              <article
-                key={message.id}
-                className={`chat-message ${message.role} ${"error" in message && message.error ? "chat-error" : ""}`}
-              >
-                <p className="chat-role">{message.role === "user" ? "Gestor" : "Assistente"}</p>
-                {"answer" in message ? (
-                  <AssistantAnswer answer={message.answer} sql={message.sql} rowsCount={message.rowsCount} />
-                ) : (
-                  <p>{message.text}</p>
-                )}
-              </article>
-            ))}
-            {pending ? (
-              <article className="chat-message assistant chat-pending">
-                <p className="chat-role">Assistente</p>
-                <p>Analisando...</p>
-              </article>
-            ) : null}
-          </div>
-
-          <form action={formAction} className="chat-form" ref={formRef}>
-            <label htmlFor="question" className="sr-only">
-              Sua pergunta
-            </label>
-            <textarea
-              id="question"
-              name="question"
-              ref={textareaRef}
-              placeholder="Escreva sua pergunta..."
-              required
-              minLength={4}
-              maxLength={500}
-              rows={2}
-              className="chat-input"
-              onKeyDown={handleQuestionKeyDown}
-            />
-            <button type="submit" className="btn-primary chat-send-button" disabled={pending}>
-              {pending ? "..." : "Enviar"}
-            </button>
-          </form>
-        </section>
-      ) : (
-        <button type="button" className="chat-launcher" aria-expanded={isOpen} onClick={() => setIsOpen(true)}>
-          Chat Gerencial
-        </button>
-      )}
-    </aside>
+        <form action={formAction} ref={formRef} style={{ marginTop: 16, display: "flex", gap: 8 }}>
+          <Input.TextArea
+            name="question"
+            placeholder="Escreva sua pergunta..."
+            required
+            minLength={4}
+            maxLength={500}
+            rows={2}
+            onKeyDown={handleQuestionKeyDown}
+          />
+          <Button type="primary" htmlType="submit" loading={pending} style={{ flexShrink: 0 }}>
+            Enviar
+          </Button>
+        </form>
+      </Drawer>
+    </>
   );
 }

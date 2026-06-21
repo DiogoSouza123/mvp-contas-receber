@@ -1,27 +1,14 @@
-import Image from "next/image";
+import { Card, Col, Row, Statistic } from "antd";
 
+import { DashboardFiltersBar } from "@/components/DashboardFiltersBar";
 import { ManagerChat } from "@/components/ManagerChat";
-import { MetricCard } from "@/components/MetricCard";
 import { ReceivablesTable } from "@/components/ReceivablesTable";
-import { getDashboardSnapshot, normalizeFilters, type DashboardFilters } from "@/lib/dashboard";
+import { getDashboardSnapshot, normalizeFilters } from "@/lib/dashboard";
 import { formatCurrency, formatPercent } from "@/lib/format";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function statusValueLabel(value: DashboardFilters["status"]) {
-  if (value === "open") {
-    return "Em aberto";
-  }
-  if (value === "overdue") {
-    return "Vencidos";
-  }
-  if (value === "paid") {
-    return "Pagos";
-  }
-  return "Todos";
-}
 
 export default async function Home({ searchParams }: PageProps) {
   const params = (await searchParams) || {};
@@ -35,111 +22,80 @@ export default async function Home({ searchParams }: PageProps) {
         : (snapshot.kpis.enviosSucesso / snapshot.kpis.totalEnvios) * 100;
 
     return (
-      <main className="page-shell">
-        <section className="hero">
-          <div className="hero-brand">
-            <div className="logo-placeholder">
-              <Image
-                src="/logo_nippo_elevadores.png"
-                alt="Logo da Nippon"
-                width={300}
-                height={67}
-                priority
-              />
-            </div>
-            <div>
-              <p className="hero-kicker">Nippon | Operações Financeiras</p>
-              <h1 className="hero-title">Painel Gerencial de Inadimplência e Cobranças</h1>
-              <p className="hero-subtitle">
-                Visão consolidada com dados diretos do PostgreSQL e apoio de LLM para análises em
-                linguagem natural.
-              </p>
-            </div>
-          </div>
-
-          <form method="get" className="filters">
-            <div className="input-group">
-              <label htmlFor="startDate">Data inicial</label>
-              <input type="date" id="startDate" name="startDate" defaultValue={filters.startDate} />
-            </div>
-            <div className="input-group">
-              <label htmlFor="endDate">Data final</label>
-              <input type="date" id="endDate" name="endDate" defaultValue={filters.endDate} />
-            </div>
-            <div className="input-group">
-              <label htmlFor="status">Status</label>
-              <select id="status" name="status" defaultValue={filters.status}>
-                <option value="all">Todos</option>
-                <option value="open">Em aberto</option>
-                <option value="overdue">Vencidos</option>
-                <option value="paid">Pagos</option>
-              </select>
-            </div>
-            <div className="input-group input-grow">
-              <label htmlFor="search">Busca</label>
-              <input
-                id="search"
-                name="search"
-                type="text"
-                placeholder="Cliente, CPF/CNPJ, documento, nosso número"
-                defaultValue={filters.search}
-              />
-            </div>
-            <button type="submit" className="btn-primary">
-              Aplicar filtros
-            </button>
-          </form>
-          <p className="filters-footnote">
-            Escopo atual: <strong>tenant {filters.tenantId}</strong> | status:{" "}
-            <strong>{statusValueLabel(filters.status)}</strong>
+      <>
+        <Card>
+          <p className="page-kicker">Nippon | Operações Financeiras</p>
+          <h1 className="page-title">Painel Gerencial de Inadimplência e Cobranças</h1>
+          <p className="page-subtitle">
+            Visão consolidada com dados diretos do PostgreSQL e apoio de LLM para análises em linguagem
+            natural.
           </p>
-        </section>
+          <DashboardFiltersBar filters={filters} />
+        </Card>
 
-        <section className="metrics-grid">
-          <MetricCard
-            label="Valor em aberto"
-            value={formatCurrency(snapshot.kpis.valorEmAberto)}
-            helper={`${snapshot.kpis.titulosEmAberto} título(s) em aberto`}
-          />
-          <MetricCard
-            label="Valor vencido"
-            value={formatCurrency(snapshot.kpis.valorVencido)}
-            helper={`${snapshot.kpis.titulosVencidos} título(s) vencido(s)`}
-            danger
-          />
-          <MetricCard
-            label="Taxa de inadimplência"
-            value={formatPercent(snapshot.kpis.taxaInadimplencia)}
-            helper="Títulos vencidos / títulos em aberto"
-          />
-          <MetricCard
-            label="Recebido no período"
-            value={formatCurrency(snapshot.kpis.valorRecebido)}
-            helper={`${snapshot.kpis.totalTitulos} título(s) analisado(s)`}
-          />
-          <MetricCard
-            label="Envios WhatsApp"
-            value={`${snapshot.kpis.totalEnvios}`}
-            helper={`${snapshot.kpis.enviosSucesso} com sucesso (${formatPercent(taxaSucessoWhatsapp)})`}
-          />
-        </section>
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card>
+              <Statistic
+                title="Valor em aberto"
+                value={formatCurrency(snapshot.kpis.valorEmAberto)}
+                valueStyle={{ fontSize: 22 }}
+              />
+              <p className="cell-helper">{snapshot.kpis.titulosEmAberto} título(s) em aberto</p>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={5}>
+            <Card>
+              <Statistic
+                title="Valor vencido"
+                value={formatCurrency(snapshot.kpis.valorVencido)}
+                valueStyle={{ fontSize: 22, color: "#cf1322" }}
+              />
+              <p className="cell-helper">{snapshot.kpis.titulosVencidos} título(s) vencido(s)</p>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={5}>
+            <Card>
+              <Statistic
+                title="Taxa de inadimplência"
+                value={formatPercent(snapshot.kpis.taxaInadimplencia)}
+                valueStyle={{ fontSize: 22 }}
+              />
+              <p className="cell-helper">Títulos vencidos / títulos em aberto</p>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={5}>
+            <Card>
+              <Statistic
+                title="Recebido no período"
+                value={formatCurrency(snapshot.kpis.valorRecebido)}
+                valueStyle={{ fontSize: 22, color: "#3f8600" }}
+              />
+              <p className="cell-helper">{snapshot.kpis.totalTitulos} título(s) analisado(s)</p>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={5}>
+            <Card>
+              <Statistic title="Envios WhatsApp" value={snapshot.kpis.totalEnvios} valueStyle={{ fontSize: 22 }} />
+              <p className="cell-helper">
+                {snapshot.kpis.enviosSucesso} com sucesso ({formatPercent(taxaSucessoWhatsapp)})
+              </p>
+            </Card>
+          </Col>
+        </Row>
 
         <ReceivablesTable rows={snapshot.rows} />
         <ManagerChat />
-      </main>
+      </>
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao carregar dados.";
     return (
-      <main className="page-shell">
-        <section className="panel">
-          <h1 className="panel-title">Falha ao carregar dashboard</h1>
-          <p className="panel-subtitle">{message}</p>
-          <p className="panel-subtitle">
-            Verifique `DATABASE_URL` no container do frontend e se o Postgres está ativo.
-          </p>
-        </section>
-      </main>
+      <Card>
+        <h1 className="page-title">Falha ao carregar dashboard</h1>
+        <p className="page-subtitle">{message}</p>
+        <p className="page-subtitle">Verifique `DATABASE_URL` no container do frontend e se o Postgres está ativo.</p>
+      </Card>
     );
   }
 }
