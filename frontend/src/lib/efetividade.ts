@@ -100,10 +100,10 @@ export async function getEfetividadeSnapshot(filters: EfetividadeFilters): Promi
         COUNT(*) FILTER (WHERE ca.status = 'em_cobranca')::int AS total_em_cobranca,
         COALESCE(SUM(cr.total) FILTER (WHERE ca.status = 'baixado_por_ausencia'), 0)::numeric AS valor_recuperado,
         COALESCE(SUM(cr.total) FILTER (WHERE ca.status = 'em_cobranca'), 0)::numeric AS valor_em_cobranca,
-        AVG(cr.data_pagamento - ca.primeira_cobranca_em::date) FILTER (WHERE ca.status = 'baixado_por_ausencia') AS dias_medio_baixa
+        AVG(cr.data_pagamento - (ca.primeira_cobranca_em AT TIME ZONE 'America/Sao_Paulo')::date) FILTER (WHERE ca.status = 'baixado_por_ausencia') AS dias_medio_baixa
       FROM cobranca_acompanhamento ca
       INNER JOIN contas_receber cr ON cr.id = ca.conta_receber_id
-      WHERE ca.primeira_cobranca_em::date BETWEEN $1::date AND $2::date
+      WHERE (ca.primeira_cobranca_em AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $1::date AND $2::date
     `,
     params
   );
@@ -117,7 +117,7 @@ export async function getEfetividadeSnapshot(filters: EfetividadeFilters): Promi
       FROM cobrancas_whatsapp cw
       LEFT JOIN boletos b ON b.id = cw.boleto_id
       LEFT JOIN contas_receber cr ON cr.id = b.conta_receber_id
-      WHERE cw.created_at::date BETWEEN $1::date AND $2::date
+      WHERE (cw.created_at AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $1::date AND $2::date
     `,
     params
   );
@@ -125,9 +125,9 @@ export async function getEfetividadeSnapshot(filters: EfetividadeFilters): Promi
   const tendenciaRows = await queryRows<TendenciaDbRow>(
     `
       WITH entradas AS (
-        SELECT primeira_cobranca_em::date AS dia, COUNT(*)::int AS total
+        SELECT (primeira_cobranca_em AT TIME ZONE 'America/Sao_Paulo')::date AS dia, COUNT(*)::int AS total
         FROM cobranca_acompanhamento
-        WHERE primeira_cobranca_em::date BETWEEN $1::date AND $2::date
+        WHERE (primeira_cobranca_em AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $1::date AND $2::date
         GROUP BY 1
       ),
       baixas AS (

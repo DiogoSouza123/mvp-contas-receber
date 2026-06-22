@@ -200,7 +200,7 @@ export async function getDashboardSnapshot(filters: DashboardFilters): Promise<D
         COUNT(*) FILTER (WHERE cw.status = TRUE)::int AS envios_sucesso
       FROM cobrancas_whatsapp cw
       WHERE cw.tenant_id = $1
-        AND cw.created_at::date BETWEEN $2::date AND $3::date
+        AND (cw.created_at AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $2::date AND $3::date
     `,
     [filters.tenantId, filters.startDate, filters.endDate]
   );

@@ -91,7 +91,8 @@ export function normalizeCobrancaFilters(
 
 export async function getCobrancas(filters: CobrancaFilters): Promise<CobrancaRow[]> {
   const params: unknown[] = [filters.tenantId, filters.startDate, filters.endDate];
-  let whereSql = "cw.tenant_id = $1 AND cw.created_at::date BETWEEN $2::date AND $3::date";
+  let whereSql =
+    "cw.tenant_id = $1 AND (cw.created_at AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $2::date AND $3::date";
 
   if (filters.status === "sucesso") {
     whereSql += " AND cw.status = TRUE";
@@ -141,7 +142,7 @@ export async function getAtendimentos(filters: CobrancaFilters): Promise<Atendim
         ac.channel,
         ac.created_at::text AS created_at
       FROM atendimentos_chat ac
-      WHERE ac.created_at::date BETWEEN $1::date AND $2::date
+      WHERE (ac.created_at AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN $1::date AND $2::date
       ORDER BY ac.created_at DESC
       LIMIT 300
     `,
